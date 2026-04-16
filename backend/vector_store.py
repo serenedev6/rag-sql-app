@@ -42,6 +42,9 @@ def create_vector_store(documents: List[Document], collection_name: str = "sql_r
     )
 
     if embeddings_model is None:
+        if len(texts) == 0:
+            print("⚠️ No documents to add!")
+            return None
         # ChromaDB handles embeddings internally
         print("🔄 ChromaDB embeddings generate ho rahi hain...")
         collection.add(
