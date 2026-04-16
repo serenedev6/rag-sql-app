@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+*.egg-info/
+
+# Environment
+.env
+*.env
+
+# Database
+*.db
+*.sqlite3
+
+# Vector store
+backend/chroma_db/
+
+# Docker
+*.tar
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Backup files
+requirements_backup.txt

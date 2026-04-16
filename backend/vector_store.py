@@ -1,0 +1,114 @@
+# vector_store.py
+import os
+import chromadb
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
+from langchain_core.documents import Document
+from typing import List
+import os
+
+llama_host = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+CHROMA_DB_PATH = "./chroma_db"
+
+
+def create_vector_store(documents: List[Document], collection_name: str = "sql_rag"):
+    print(f"⏳ {len(documents)} documents ke embeddings ban rahe hain...")
+
+    # Embeddings model
+    # embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    print(f"🔗 Ollama URL: {llama_host}")
+    embeddings_model = OllamaEmbeddings(model="nomic-embed-text", base_url=llama_host)
+
+    # Texts extract karo
+    texts = [doc.page_content for doc in documents]
+
+    # Embeddings banao
+    print("🔄 Embeddings generate ho rahi hain...")
+    embeddings = embeddings_model.embed_documents(texts)
+    print(f"✅ {len(embeddings)} embeddings bani — size: {len(embeddings[0])}")
+
+    # ChromaDB client banao
+    client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+
+    # Purana collection delete karo agar hai
+    try:
+        client.delete_collection(collection_name)
+    except:
+        pass
+
+    # Naya collection banao
+    collection = client.create_collection(
+        name=collection_name,
+        metadata={"hnsw:space": "cosine"}
+    )
+
+    # Documents add karo
+    collection.add(
+        embeddings=embeddings,
+        documents=texts,
+        ids=[f"doc_{i}" for i in range(len(texts))],
+        metadatas=[doc.metadata for doc in documents]
+    )
+
+    print(f"✅ Vector store ready! {len(texts)} documents store kiye")
+
+    return {
+        "collection": collection,
+        "embeddings_model": embeddings_model,
+        "client": client,
+        "collection_name": collection_name
+    }
+
+
+def load_existing_vector_store(collection_name: str = "sql_rag"):
+    if not os.path.exists(CHROMA_DB_PATH):
+        print("⚠️ Koi existing vector store nahi mila")
+        return None
+
+    try:
+        # embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        # embeddings_model = OllamaEmbeddings(model="nomic-embed-text")
+        embeddings_model = OllamaEmbeddings(model="nomic-embed-text", base_url=ollama_host)
+        client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        collection = client.get_collection(collection_name)
+
+        print("✅ Existing vector store load ho gaya!")
+        return {
+            "collection": collection,
+            "embeddings_model": embeddings_model,
+            "client": client,
+            "collection_name": collection_name
+        }
+    except Exception as e:
+        print(f"⚠️ Load failed: {e}")
+        return None
+
+
+def delete_vector_store():
+    import shutil
+    if os.path.exists(CHROMA_DB_PATH):
+        shutil.rmtree(CHROMA_DB_PATH)
+        print("✅ Vector store delete ho gaya")
+    else:
+        print("⚠️ Koi vector store nahi mila")
+
+
+def search_similar(vector_store: dict, query: str, top_k: int = 4) -> List[Document]:
+    """Query ke similar documents dhundta hai"""
+    collection = vector_store["collection"]
+    embeddings_model = vector_store["embeddings_model"]
+
+    query_embedding = embeddings_model.embed_query(query)
+
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k
+    )
+
+    docs = []
+    for i, text in enumerate(results["documents"][0]):
+        metadata = results["metadatas"][0][i] if results["metadatas"] else {}
+        docs.append(Document(page_content=text, metadata=metadata))
+
+    return docs
