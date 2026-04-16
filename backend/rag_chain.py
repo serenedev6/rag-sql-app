@@ -11,18 +11,28 @@ from typing import List
 import os
 
 ollama_host = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+use_groq = os.getenv("USE_GROQ", "false").lower() == "true"
 
 load_dotenv()
 
 
 def create_rag_chain(vector_store: dict, top_k: int = 4):
-    llm = ChatOllama(
-        # api_key=os.getenv("GROQ_API_KEY"),
-        # model="llama-3.3-70b-versatile",
-        base_url=ollama_host,
-        model="llama3.2",
-        temperature=0
-    )
+    if use_groq:
+        from langchain_groq import ChatGroq
+        llm = ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="llama-3.3-70b-versatile",
+            temperature=0
+        )
+        print("✅ Using Groq LLM")
+    else:
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(
+            base_url=ollama_host,
+            model="llama3.2",
+            temperature=0
+        )
+        print("✅ Using Ollama LLM")
 
     prompt_template = PromptTemplate.from_template("""
 Tum ek helpful data assistant ho. Neeche diye gaye context ke basis par sawaal ka jawab do.

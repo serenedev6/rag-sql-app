@@ -1,55 +1,65 @@
 # vector_store.py
 import os
 import chromadb
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 from typing import List
-import os
 
 llama_host = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+use_groq = os.getenv("USE_GROQ", "false").lower() == "true"
 
 CHROMA_DB_PATH = "./chroma_db"
+
+
+def get_embeddings_model():
+    if use_groq:
+        # Use chromadb default embeddings (no extra packages needed)
+        print("✅ Using ChromaDB default embeddings")
+        return None
+    else:
+        from langchain_ollama import OllamaEmbeddings
+        print(f"🔗 Ollama URL: {llama_host}")
+        return OllamaEmbeddings(model="nomic-embed-text", base_url=llama_host)
 
 
 def create_vector_store(documents: List[Document], collection_name: str = "sql_rag"):
     print(f"⏳ {len(documents)} documents ke embeddings ban rahe hain...")
 
-    # Embeddings model
-    # embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    print(f"🔗 Ollama URL: {llama_host}")
-    embeddings_model = OllamaEmbeddings(model="nomic-embed-text", base_url=llama_host)
+    embeddings_model = get_embeddings_model()
 
-    # Texts extract karo
     texts = [doc.page_content for doc in documents]
+    metadatas = [doc.metadata for doc in documents]
 
-    # Embeddings banao
-    print("🔄 Embeddings generate ho rahi hain...")
-    embeddings = embeddings_model.embed_documents(texts)
-    print(f"✅ {len(embeddings)} embeddings bani — size: {len(embeddings[0])}")
-
-    # ChromaDB client banao
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-    # Purana collection delete karo agar hai
     try:
         client.delete_collection(collection_name)
     except:
         pass
 
-    # Naya collection banao
     collection = client.create_collection(
         name=collection_name,
         metadata={"hnsw:space": "cosine"}
     )
 
-    # Documents add karo
-    collection.add(
-        embeddings=embeddings,
-        documents=texts,
-        ids=[f"doc_{i}" for i in range(len(texts))],
-        metadatas=[doc.metadata for doc in documents]
-    )
+    if embeddings_model is None:
+        # ChromaDB handles embeddings internally
+        print("🔄 ChromaDB embeddings generate ho rahi hain...")
+        collection.add(
+            documents=texts,
+            ids=[f"doc_{i}" for i in range(len(texts))],
+            metadatas=metadatas
+        )
+    else:
+        # Use Ollama embeddings
+        print("🔄 Ollama embeddings generate ho rahi hain...")
+        embeddings = embeddings_model.embed_documents(texts)
+        print(f"✅ {len(embeddings)} embeddings bani — size: {len(embeddings[0])}")
+        collection.add(
+            embeddings=embeddings,
+            documents=texts,
+            ids=[f"doc_{i}" for i in range(len(texts))],
+            metadatas=metadatas
+        )
 
     print(f"✅ Vector store ready! {len(texts)} documents store kiye")
 
@@ -67,9 +77,7 @@ def load_existing_vector_store(collection_name: str = "sql_rag"):
         return None
 
     try:
-        # embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        # embeddings_model = OllamaEmbeddings(model="nomic-embed-text")
-        embeddings_model = OllamaEmbeddings(model="nomic-embed-text", base_url=ollama_host)
+        embeddings_model = get_embeddings_model()
         client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         collection = client.get_collection(collection_name)
 
@@ -95,16 +103,21 @@ def delete_vector_store():
 
 
 def search_similar(vector_store: dict, query: str, top_k: int = 4) -> List[Document]:
-    """Query ke similar documents dhundta hai"""
     collection = vector_store["collection"]
     embeddings_model = vector_store["embeddings_model"]
 
-    query_embedding = embeddings_model.embed_query(query)
-
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k
-    )
+    if embeddings_model is None:
+        # ChromaDB handles query embeddings internally
+        results = collection.query(
+            query_texts=[query],
+            n_results=top_k
+        )
+    else:
+        query_embedding = embeddings_model.embed_query(query)
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k
+        )
 
     docs = []
     for i, text in enumerate(results["documents"][0]):
