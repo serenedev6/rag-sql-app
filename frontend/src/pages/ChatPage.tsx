@@ -77,7 +77,7 @@ export const ChatPage = () => {
                 'Yoga Mat description',
                 'how many customers?',
                 'Laptop Pro 15 price',
-              ].map((suggestion) => (
+              ].map((suggestion: string) => (
                 <button
                   key={suggestion}
                   onClick={() => setQuestion(suggestion)}
