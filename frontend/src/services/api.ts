@@ -9,9 +9,60 @@ const api = axios.create({
   },
 })
 
+// Add token to every request automatically
+api.interceptors.request.use((config) => {
+  const auth = localStorage.getItem('auth-storage')
+  if (auth) {
+    const { state } = JSON.parse(auth)
+    if (state?.accessToken) {
+      config.headers.Authorization = `Bearer ${state.accessToken}`
+    }
+  }
+  return config
+})
+
+// Handle 401 responses automatically
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear auth store
+      localStorage.removeItem('auth-storage')
+      // Redirect to login
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
 export const chatAPI = {
   askQuestion: async (question: string) => {
     const response = await api.post('/ask/', { question })
+    return response.data
+  },
+}
+
+export const authAPI = {
+  register: async (username: string, email: string, password: string, password2: string) => {
+    const response = await api.post('/api/auth/register/', {
+      username, email, password, password2
+    })
+    return response.data
+  },
+  login: async (username: string, password: string) => {
+    const response = await api.post('/api/auth/login/', {
+      username, password
+    })
+    return response.data
+  },
+  logout: async (refreshToken: string) => {
+    const response = await api.post('/api/auth/logout/', {
+      refresh: refreshToken
+    })
+    return response.data
+  },
+  profile: async () => {
+    const response = await api.get('/api/auth/profile/')
     return response.data
   },
 }
