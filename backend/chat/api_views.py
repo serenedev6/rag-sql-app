@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer
+from .models import ChatHistory
 
 
 @api_view(['POST'])
@@ -58,3 +59,27 @@ def logout(request):
         return Response({'message': 'Logged out successfully'})
     except Exception:
         return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def chat_history(request):
+    history = ChatHistory.objects.filter(user=request.user)[:50]
+    data = [
+        {
+            'id': h.id,
+            'question': h.question,
+            'answer': h.answer,
+            'mode': h.mode,
+            'created_at': h.created_at,
+        }
+        for h in history
+    ]
+    return Response(data)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def clear_chat_history(request):
+    ChatHistory.objects.filter(user=request.user).delete()
+    return Response({'message': 'Chat history cleared'})

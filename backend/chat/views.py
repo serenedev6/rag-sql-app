@@ -93,6 +93,8 @@ def ask_question(request):
     global RAG_CHAIN
 
     question = request.data.get('question', '')
+    answer = ''        # ← initialize with default
+    use_sql = False    # ← initialize with default
 
     try:
         use_sql = any(keyword in question.lower() for keyword in SQL_KEYWORDS)
@@ -117,5 +119,17 @@ def ask_question(request):
 
     except Exception as e:
         answer = f"Error: {str(e)}"
+
+    # Save to history separately
+    try:
+        from .models import ChatHistory
+        ChatHistory.objects.create(
+            user=request.user,
+            question=question,
+            answer=answer,
+            mode='sql' if use_sql else 'rag'
+        )
+    except Exception as e:
+        print(f"⚠️ Could not save chat history: {e}")
 
     return Response({'answer': answer})

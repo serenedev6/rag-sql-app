@@ -14,4 +14,8 @@ urlpatterns = [
     path('api/auth/logout/', api_views.logout, name='logout'),
     path('api/auth/profile/', api_views.profile, name='profile'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+     # Chat history endpoints
+    path('api/chat/history/', api_views.chat_history, name='chat_history'),
+    path('api/chat/history/clear/', api_views.clear_chat_history, name='clear_history')
 ]
