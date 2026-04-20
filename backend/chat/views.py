@@ -9,6 +9,15 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+def rate_limit_exceeded(request, exception=None):
+    return JsonResponse(
+        {
+            'error': 'Too many requests. Please try again in a minute.',
+            'code': 'rate_limit_exceeded'
+        },
+        status=429
+    )
+
 SQL_KEYWORDS = [
     # Hinglish
     "kitne", "count", "total", "sum", "average",

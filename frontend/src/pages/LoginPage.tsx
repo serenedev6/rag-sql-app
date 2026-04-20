@@ -28,8 +28,12 @@ export const LoginPage = () => {
       navigate('/')
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response?: { data?: { error?: string } } }
-        setError(axiosErr.response?.data?.error || 'Invalid credentials')
+        const axiosErr = err as { response?: { status?: number,  data?: { error?: string } } }
+        if (axiosErr.response?.status === 429) {
+          setError('Too many login attempts. Please try again in a minute.')
+        } else {
+          setError(axiosErr.response?.data?.error || 'Invalid credentials')
+        }
       } else {
         setError('Something went wrong. Please try again.')
       }

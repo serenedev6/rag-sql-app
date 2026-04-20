@@ -6,11 +6,25 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer
 from .models import ChatHistory
+from django_ratelimit.decorators  import ratelimit
+from django.utils.decorators  import method_decorator
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@ratelimit(key='ip', rate='3/m', method='POST', block=False)
 def register(request):
+    # Check if rate limited
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        return Response(
+            {
+                'error': 'Too many registration attempts. Please try again in a minute.',
+                'code': 'rate_limit_exceeded'
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
     serializer = RegisterSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
@@ -22,10 +36,21 @@ def register(request):
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@ratelimit(key='ip', rate='5/m', method='POST', block=False)
 def login(request):
+    # Check if rate limited
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        return Response(
+            {
+                'error': 'Too many login attempts. Please try again in a minute.',
+                'code': 'rate_limit_exceeded'
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
     username = request.data.get('username')
     password = request.data.get('password')
 
