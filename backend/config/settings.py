@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'chat'
+    'rest_framework_simplejwt.token_blacklist',  # ← add this
+    'chat',
 ]
 
 MIDDLEWARE = [
@@ -69,7 +70,7 @@ ROOT_URLCONF = 'config.urls'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'chat.authentication.BlacklistCheckJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -82,8 +83,11 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,  # ← add this
     'TOKEN_TYPE_CLAIM': 'token_type',  # ← strictly check token type
     'VERIFY_EXPIRATION': True,         # ← strictly check expiry
+    'TOKEN_BLACKLIST_ENABLED': True,  # ← add this
+    'JTI_CLAIM': 'jti',              # ← add this
 }
 
 TEMPLATES = [

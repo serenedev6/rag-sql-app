@@ -53,13 +53,38 @@ def profile(request):
 @permission_classes([IsAuthenticated])
 def logout(request):
     try:
+        # Blacklist refresh token
         refresh_token = request.data.get('refresh')
-        token = RefreshToken(refresh_token)
-        token.blacklist()
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+        # Blacklist access token
+        access_token = request.auth
+        if access_token:
+            from rest_framework_simplejwt.tokens import AccessToken
+            from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+            from rest_framework_simplejwt.utils import datetime_from_epoch
+            try:
+                outstanding_token, _ = OutstandingToken.objects.get_or_create(
+                    jti=access_token['jti'],
+                    defaults={
+                        'token': str(access_token),
+                        'user': request.user,
+                        'expires_at': datetime_from_epoch(access_token['exp']),
+                    }
+                )
+                BlacklistedToken.objects.get_or_create(token=outstanding_token)
+            except Exception as e:
+                print(f"⚠️ Could not blacklist access token: {e}")
+
         return Response({'message': 'Logged out successfully'})
-    except Exception:
-        return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
-    
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
