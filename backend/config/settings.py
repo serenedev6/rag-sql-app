@@ -77,6 +77,18 @@ CORS_ALLOWED_ORIGINS = [
     "https://frontend-production-99bb.up.railway.app",  # ← add this
 ]
 
+CORS_ALLOW_CREDENTIALS = True #required for cookies!
+
+# Cookie settings
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = True   # HTTP only
+CSRF_COOKIED_HTTPONLY = False  # React needs to read CSRF token
+CSRF_COOKIE_SECURE = True      # HTTPS only
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "https://frontend-production-99bb.up.railway.app",
+]
+
 ROOT_URLCONF = 'config.urls'
 
 REST_FRAMEWORK = {
@@ -97,8 +109,13 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,  # ← add this
     'TOKEN_TYPE_CLAIM': 'token_type',  # ← strictly check token type
     'VERIFY_EXPIRATION': True,         # ← strictly check expiry
-    'TOKEN_BLACKLIST_ENABLED': True,  # ← add this
-    'JTI_CLAIM': 'jti',              # ← add this
+    'TOKEN_BLACKLIST_ENABLED': True,   # ← add this
+    'JTI_CLAIM': 'jti',                # ← add this
+    'AUTH_COOKIE': 'access_token',          # ← cookie name
+    'AUTH_COOKIE_REFRESH': 'refresh_token', # ← refresh cookie name
+    'AUTH_COOKIE_SECURE': False,            # ← True in production
+    'AUTH_COOKIE_HTTP_ONLY': True,          # ← HttpOnly!
+    'AUTH_COOKIE_SAMESITE': 'Lax',          # ← CSRF protection
 }
 
 TEMPLATES = [

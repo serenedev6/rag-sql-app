@@ -29,11 +29,35 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
-        return Response({
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        response =  Response({
             'user': UserSerializer(user).data,
             'access': str(refresh.access_token),
             'refresh': str(refresh),
         }, status=status.HTTP_201_CREATED)
+
+         # Set HttpOnly cookies
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=3600,
+        )
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=604800,
+        )
+
+        return response
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -57,11 +81,34 @@ def login(request):
     user = authenticate(username=username, password=password)
     if user:
         refresh = RefreshToken.for_user(user)
-        return Response({
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        response = Response({
             'user': UserSerializer(user).data,
             'access': str(refresh.access_token),
             'refresh': str(refresh),
         })
+    
+        # Set HttpOnly cookies
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            httponly=True,
+            secure=False,      # True in production
+            samesite='Lax',
+            max_age=3600       # 60 minutes
+        )
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
+            httponly=True,
+            secure=False,      # True in Production
+            samesite='Lax',
+            max_age=604800     # 7 days
+        )
+
+        return response
     return Response(
         {'error': 'Invalid credentials'},
         status=status.HTTP_401_UNAUTHORIZED
@@ -103,7 +150,11 @@ def logout(request):
             except Exception as e:
                 print(f"⚠️ Could not blacklist access token: {e}")
 
-        return Response({'message': 'Logged out successfully'})
+        response = Response({'message': 'Logged out successfully'})
+
+        response.delete_cookie('access_token')
+        response.delete_cookie('refresh_token')
+        return response
     except Exception as e:
         return Response(
             {'error': str(e)},
