@@ -15,4 +15,14 @@ export interface User {
   id: string
   username: string
   email: string
+  first_name?: string
+  last_name?: string
+}
+
+export interface ChatHistoryItem {
+  id: number
+  question: string
+  answer: string
+  mode: 'sql' | 'rag'
+  created_at: string
 }

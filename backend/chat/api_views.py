@@ -60,6 +60,21 @@ def logout(request):
     except Exception:
         return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
     
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    user = request.user
+    data = request.data
+
+    if 'email' in data:
+        user.email = data['email']
+    if 'first_name' in data:
+        user.first_name = data['first_name']
+    if 'last_name' in data:
+        user.last_name = data['last_name']
+
+    user.save()
+    return Response(UserSerializer(user).data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

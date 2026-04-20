@@ -5,29 +5,12 @@ import { chatAPI } from '../services/api'
 import { MessageBubble } from '../components/ui/MessageBubble'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store/authStore'
-import { authAPI } from '../services/api'
 
 export const ChatPage = () => {
   const [question, setQuestion] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const { messages, isLoading, addMessage, setLoading } = useChatStore()
-  const navigate = useNavigate()
-  const { user, refreshToken, clearAuth } = useAuthStore()
 
-  const handleLogout = async () => {
-    try {
-      if (refreshToken) {
-        await authAPI.logout(refreshToken)
-      }
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      clearAuth()
-      navigate('/login')
-    }
-  }
   // Auto scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -68,25 +51,11 @@ export const ChatPage = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-900">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🧠</span>
-          <div>
-            <h1 className="text-white font-semibold text-lg">RAG SQL Assistant</h1>
-            <p className="text-gray-400 text-sm">Powered by LangChain + Groq</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-gray-400 text-sm">
-            👤 {user?.username}
-          </span>
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="text-gray-400 hover:text-white"
-          >
-            Logout
-          </Button>
+      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-3">
+        <span className="text-2xl">🧠</span>
+        <div>
+          <h1 className="text-white font-semibold text-lg">RAG SQL Assistant</h1>
+          <p className="text-gray-400 text-sm">Powered by LangChain + Groq</p>
         </div>
       </div>
 

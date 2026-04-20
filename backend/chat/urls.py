@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/auth/login/', api_views.login, name='login'),
     path('api/auth/logout/', api_views.logout, name='logout'),
     path('api/auth/profile/', api_views.profile, name='profile'),
+    path('api/auth/profile/update/', api_views.update_profile, name='update_profile'),  # ← add this
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
      # Chat history endpoints

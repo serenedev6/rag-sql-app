@@ -40,6 +40,14 @@ export const chatAPI = {
     const response = await api.post('/ask/', { question })
     return response.data
   },
+  getHistory: async () => {
+    const response = await api.get('/api/chat/history/')
+    return response.data;
+  },
+  clearHistory: async () => {
+    const response = await api.delete('/api/chat/history/clear/')
+    return response.data;
+  }
 }
 
 export const authAPI = {
@@ -65,6 +73,10 @@ export const authAPI = {
     const response = await api.get('/api/auth/profile/')
     return response.data
   },
+  updateProfile: async (data: {email?: string, first_name?: string, last_name?: string}) => {
+    const response = await api.put('/api/auth/profile/update/', data)
+    return response.data
+  }
 }
 
 export default api
