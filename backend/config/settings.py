@@ -98,6 +98,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 ROOT_URLCONF = 'config.urls'
 
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'chat.authentication.BlacklistCheckJWTAuthentication',
