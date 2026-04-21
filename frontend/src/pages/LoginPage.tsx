@@ -28,7 +28,8 @@ export const LoginPage = () => {
         navigate('/verify-otp', {
           state: {
             user_id: response.user_id,
-            message: response.message
+            message: response.message,
+            mfa_type: response.mfa_type  // ← add this
           }
         })
         return

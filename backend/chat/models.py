@@ -45,3 +45,32 @@ class EmailOTP(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.otp}"
+    
+import pyotp
+
+class TOTPDevice(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    secret_key = models.CharField(max_length=32)
+    is_enabled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - TOTP {'enabled' if self.is_enabled else 'disabled'}"
+
+    @classmethod
+    def generate_secret(cls):
+        return pyotp.random_base32()
+
+    def get_totp(self):
+        return pyotp.TOTP(self.secret_key)
+
+    def verify_token(self, token):
+        totp = self.get_totp()
+        return totp.verify(token, valid_window=1)
+
+    def get_qr_code_url(self):
+        totp = self.get_totp()
+        return totp.provisioning_uri(
+            name=self.user.email or self.user.username,
+            issuer_name="RAG SQL Assistant"
+        )

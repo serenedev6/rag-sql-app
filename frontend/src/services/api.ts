@@ -82,6 +82,27 @@ export const authAPI = {
     const response = await api.post('/api/auth/verify-otp/', { user_id, otp })
     return response.data
   },
+  // TOTP
+  verifyTOTPLogin: async (user_id: number, token: string) => {
+    const response = await api.post('/api/auth/totp/verify-login/', { user_id, token })
+    return response.data
+  },
+  totpSetup: async () => {
+    const response = await api.post('/api/auth/totp/setup/', {})
+    return response.data
+  },
+  totpVerifySetup: async (token: string) => {
+    const response = await api.post('/api/auth/totp/verify-setup/', { token })
+    return response.data
+  },
+  totpDisable: async (token: string) => {
+    const response = await api.post('/api/auth/totp/disable/', { token })
+    return response.data
+  },
+  totpStatus: async () => {
+    const response = await api.get('/api/auth/totp/status/')
+    return response.data
+  },
 }
 
 export default api

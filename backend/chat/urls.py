@@ -22,4 +22,11 @@ urlpatterns = [
 
     # Verify OTP
     path('api/auth/verify-otp/', api_views.verify_otp, name='verify_otp'),
+
+    # Google Authenticator - TOTP
+    path('api/auth/totp/setup/', api_views.totp_setup, name='totp_setup'),
+    path('api/auth/totp/verify-setup/', api_views.totp_verify_setup, name='totp_verify_setup'),
+    path('api/auth/totp/disable/', api_views.totp_disable, name='totp_disable'),
+    path('api/auth/totp/status/', api_views.totp_status, name='totp_status'),
+    path('api/auth/totp/verify-login/', api_views.verify_totp_login, name='verify_totp_login'),
 ]

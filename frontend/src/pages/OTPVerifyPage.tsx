@@ -13,12 +13,12 @@ export const OTPVerifyPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Get user_id and message passed from login page
-  const { user_id, message } = location.state || {}
+  const { user_id, message, mfa_type } = location.state || {}
+  const isTOTP = mfa_type === 'totp'
 
   const handleVerify = async () => {
     if (!otp.trim()) {
-      setError('Please enter the OTP')
+      setError('Please enter the code')
       return
     }
 
@@ -26,13 +26,18 @@ export const OTPVerifyPage = () => {
     setError('')
 
     try {
-      const response = await authAPI.verifyOTP(user_id, otp)
+      let response
+      if (isTOTP) {
+        response = await authAPI.verifyTOTPLogin(user_id, otp)
+      } else {
+        response = await authAPI.verifyOTP(user_id, otp)
+      }
       setAuth(response.user, response.access, response.refresh)
       navigate('/')
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosErr = err as { response?: { data?: { error?: string } } }
-        setError(axiosErr.response?.data?.error || 'Invalid OTP')
+        setError(axiosErr.response?.data?.error || 'Invalid code')
       } else {
         setError('Something went wrong. Please try again.')
       }
@@ -41,25 +46,22 @@ export const OTPVerifyPage = () => {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleVerify()
-  }
-
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <span className="text-6xl">🔐</span>
+          <span className="text-6xl">{isTOTP ? '📱' : '🔐'}</span>
           <h1 className="text-white text-3xl font-bold mt-4">
-            Verify Your Identity
+            {isTOTP ? 'Authenticator Code' : 'Verify Your Identity'}
           </h1>
           <p className="text-gray-400 mt-2">
-            {message || 'Enter the OTP sent to your email'}
+            {message || (isTOTP
+              ? 'Enter the 6-digit code from your authenticator app'
+              : 'Enter the OTP sent to your email'
+            )}
           </p>
         </div>
 
-        {/* Form */}
         <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
           {error && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
@@ -69,19 +71,20 @@ export const OTPVerifyPage = () => {
 
           <div>
             <label className="text-gray-300 text-sm font-medium mb-2 block">
-              Enter 6-digit OTP
+              {isTOTP ? 'Authenticator Code' : '6-digit OTP'}
             </label>
             <Input
               value={otp}
               onChange={setOtp}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter OTP"
+              placeholder="Enter 6-digit code"
               disabled={isLoading}
-              className="text-center text-2xl tracking-widest"
             />
-            <p className="text-gray-500 text-xs mt-2">
-              OTP expires in 10 minutes
-            </p>
+            {!isTOTP && (
+              <p className="text-gray-500 text-xs mt-2">OTP expires in 10 minutes</p>
+            )}
+            {isTOTP && (
+              <p className="text-gray-500 text-xs mt-2">Code refreshes every 30 seconds</p>
+            )}
           </div>
 
           <Button
@@ -89,7 +92,7 @@ export const OTPVerifyPage = () => {
             disabled={isLoading || !otp.trim()}
             className="w-full mt-6 py-3"
           >
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
+            {isLoading ? 'Verifying...' : 'Verify'}
           </Button>
 
           <button

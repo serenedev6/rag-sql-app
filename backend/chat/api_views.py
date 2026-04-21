@@ -82,22 +82,41 @@ def login(request):
 
     user = authenticate(username=username, password=password)
     if user:
-        # Check if MFA is enabled
-        if settings.MFA_ENABLED:
-            if not user.email:
-                return Response(
-                    {'error': 'No email address associated with this account.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            # Generate and send OTP
-            otp_obj = EmailOTP.generate_otp(user)
-            send_otp_email(user.email, user.username, otp_obj.otp)
+        # Check if TOTP is enabled
+        from .models import TOTPDevice
+        try:
+            totp_device = TOTPDevice.objects.get(user=user, is_enabled=True)
+            totp_enabled = True
+        except TOTPDevice.DoesNotExist:
+            totp_enabled = False
 
-            return Response({
-                'mfa_required': True,
-                'user_id': user.id,
-                'message': f'OTP sent to {user.email[:3]}***@{user.email.split("@")[1]}'
-            })
+        # Check if MFA is enabled (Email OTP or TOTP)
+        if settings.MFA_ENABLED or totp_enabled:
+            if totp_enabled:
+                # TOTP is enabled - ask for TOTP code
+                return Response({
+                    'mfa_required': True,
+                    'mfa_type': 'totp',
+                    'user_id': user.id,
+                    'message': 'Enter the code from your authenticator app'
+                })
+            else:
+                # Email OTP
+                if settings.MFA_ENABLED:
+                    if not user.email:
+                        return Response(
+                            {'error': 'No email address associated with this account.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                # Generate and send OTP
+                otp_obj = EmailOTP.generate_otp(user)
+                send_otp_email(user.email, user.username, otp_obj.otp)
+
+                return Response({
+                    'mfa_required': True,
+                    'user_id': user.id,
+                    'message': f'OTP sent to {user.email[:3]}***@{user.email.split("@")[1]}'
+                })
 
         # MFA disabled - return tokens directly
         refresh = RefreshToken.for_user(user)
@@ -134,6 +153,69 @@ def login(request):
         status=status.HTTP_401_UNAUTHORIZED
     )
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@ratelimit(key='ip', rate='5/m', method='POST', block=False)
+def verify_totp_login(request):
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        return Response(
+            {'error': 'Too many attempts. Please try again in a minute.'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    user_id = request.data.get('user_id')
+    token = request.data.get('token')
+
+    if not user_id or not token:
+        return Response(
+            {'error': 'user_id and token are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        from django.contrib.auth.models import User
+        from .models import TOTPDevice
+        user = User.objects.get(id=user_id)
+        device = TOTPDevice.objects.get(user=user, is_enabled=True)
+
+        if device.verify_token(token):
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            response = Response({
+                'user': UserSerializer(user).data,
+                'access': access_token,
+                'refresh': refresh_token,
+            })
+
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                httponly=True,
+                secure=False,
+                samesite='Lax',
+                max_age=3600,
+            )
+            response.set_cookie(
+                key='refresh_token',
+                value=refresh_token,
+                httponly=True,
+                secure=False,
+                samesite='Lax',
+                max_age=604800,
+            )
+            return response
+        else:
+            return Response(
+                {'error': 'Invalid token. Please try again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    except User.DoesNotExist:
+        return Response({'error': 'Invalid user'}, status=status.HTTP_400_BAD_REQUEST)
+    except TOTPDevice.DoesNotExist:
+        return Response({'error': 'TOTP not enabled'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -299,3 +381,125 @@ def chat_history(request):
 def clear_chat_history(request):
     ChatHistory.objects.filter(user=request.user).delete()
     return Response({'message': 'Chat history cleared'})
+
+
+import pyotp
+import qrcode
+import base64
+from io import BytesIO
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def totp_setup(request):
+    """Generate TOTP secret and QR code for setup"""
+    from .models import TOTPDevice
+
+    # Get or create TOTP device
+    device, created = TOTPDevice.objects.get_or_create(
+        user=request.user,
+        defaults={'secret_key': pyotp.random_base32()}
+    )
+
+    if not created and device.is_enabled:
+        return Response(
+            {'error': 'TOTP is already enabled'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Generate new secret if not enabled yet
+    if not device.is_enabled:
+        device.secret_key = pyotp.random_base32()
+        device.save()
+
+    # Generate QR code
+    qr_url = device.get_qr_code_url()
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convert to base64
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    return Response({
+        'secret_key': device.secret_key,
+        'qr_code': f'data:image/png;base64,{qr_base64}',
+        'manual_entry': qr_url,
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def totp_verify_setup(request):
+    """Verify TOTP token and enable 2FA"""
+    from .models import TOTPDevice
+
+    token = request.data.get('token')
+    if not token:
+        return Response(
+            {'error': 'Token is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        device = TOTPDevice.objects.get(user=request.user)
+        if device.verify_token(token):
+            device.is_enabled = True
+            device.save()
+            return Response({'message': 'TOTP enabled successfully! ✅'})
+        else:
+            return Response(
+                {'error': 'Invalid token. Please try again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    except TOTPDevice.DoesNotExist:
+        return Response(
+            {'error': 'Please setup TOTP first'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def totp_disable(request):
+    """Disable TOTP"""
+    from .models import TOTPDevice
+
+    token = request.data.get('token')
+    if not token:
+        return Response(
+            {'error': 'Token is required to disable TOTP'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        device = TOTPDevice.objects.get(user=request.user, is_enabled=True)
+        if device.verify_token(token):
+            device.delete()
+            return Response({'message': 'TOTP disabled successfully'})
+        else:
+            return Response(
+                {'error': 'Invalid token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    except TOTPDevice.DoesNotExist:
+        return Response(
+            {'error': 'TOTP is not enabled'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def totp_status(request):
+    """Check if TOTP is enabled for user"""
+    from .models import TOTPDevice
+    try:
+        device = TOTPDevice.objects.get(user=request.user)
+        return Response({
+            'enabled': device.is_enabled,
+        })
+    except TOTPDevice.DoesNotExist:
+        return Response({'enabled': False})

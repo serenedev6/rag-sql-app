@@ -1,75 +1,245 @@
-import { useAuthStore } from '../store/authStore'
-import { useChatStore } from '../store/chatStore'
+import { useState, useEffect } from 'react'
+import { authAPI } from '../services/api'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 
 export const SettingsPage = () => {
-  const { user } = useAuthStore()
-  const { clearMessages } = useChatStore()
+  const [totpEnabled, setTotpEnabled] = useState(false)
+  const [showSetup, setShowSetup] = useState(false)
+  const [qrCode, setQrCode] = useState('')
+  const [secretKey, setSecretKey] = useState('')
+  const [token, setToken] = useState('')
+  const [disableToken, setDisableToken] = useState('')
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [showDisable, setShowDisable] = useState(false)
+
+  useEffect(() => {
+    fetchTOTPStatus()
+  }, [])
+
+  const fetchTOTPStatus = async () => {
+    try {
+      const data = await authAPI.totpStatus()
+      setTotpEnabled(data.enabled)
+    } catch (err) {
+      console.error('Error fetching TOTP status:', err)
+    }
+  }
+
+  const handleSetupTOTP = async () => {
+    setIsLoading(true)
+    setError('')
+    setMessage('')
+    try {
+      const data = await authAPI.totpSetup()
+      setQrCode(data.qr_code)
+      setSecretKey(data.secret_key)
+      setShowSetup(true)
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { error?: string } } }
+        setError(axiosErr.response?.data?.error || 'Failed to setup TOTP')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerifySetup = async () => {
+    if (!token.trim()) {
+      setError('Please enter the token')
+      return
+    }
+    setIsLoading(true)
+    setError('')
+    try {
+      await authAPI.totpVerifySetup(token)
+      setMessage('✅ Google Authenticator enabled successfully!')
+      setTotpEnabled(true)
+      setShowSetup(false)
+      setToken('')
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { error?: string } } }
+        setError(axiosErr.response?.data?.error || 'Invalid token')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDisableTOTP = async () => {
+    if (!disableToken.trim()) {
+      setError('Please enter the token')
+      return
+    }
+    setIsLoading(true)
+    setError('')
+    try {
+      await authAPI.totpDisable(disableToken)
+      setMessage('Google Authenticator disabled')
+      setTotpEnabled(false)
+      setShowDisable(false)
+      setDisableToken('')
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { error?: string } } }
+        setError(axiosErr.response?.data?.error || 'Invalid token')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="p-8 max-w-2xl">
       <div className="mb-8">
         <h1 className="text-white text-3xl font-bold">Settings</h1>
-        <p className="text-gray-400 mt-2">Manage your preferences</p>
+        <p className="text-gray-400 mt-2">Manage your security settings</p>
       </div>
 
-      {/* Account section */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6">
-        <h2 className="text-white font-bold text-lg mb-4">Account</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-3 border-b border-gray-700">
-            <div>
-              <p className="text-white text-sm font-medium">Username</p>
-              <p className="text-gray-400 text-xs">{user?.username}</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between py-3">
-            <div>
-              <p className="text-white text-sm font-medium">Email</p>
-              <p className="text-gray-400 text-xs">{user?.email}</p>
-            </div>
-          </div>
+      {/* Success/Error messages */}
+      {message && (
+        <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg mb-6 text-sm">
+          {message}
         </div>
-      </div>
-
-      {/* Chat section */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 mb-6">
-        <h2 className="text-white font-bold text-lg mb-4">Chat</h2>
-        <div className="flex items-center justify-between py-3">
-          <div>
-            <p className="text-white text-sm font-medium">Clear current session</p>
-            <p className="text-gray-400 text-xs">Clear messages from current chat session</p>
-          </div>
-          <button
-            onClick={() => {
-              clearMessages()
-              alert('Chat session cleared!')
-            }}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-          >
-            Clear
-          </button>
+      )}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* App info */}
+      {/* TOTP Section */}
       <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
-        <h2 className="text-white font-bold text-lg mb-4">About</h2>
-        <div className="space-y-2">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">📱</span>
+            <div>
+              <h2 className="text-white font-semibold">Google Authenticator</h2>
+              <p className="text-gray-400 text-sm">
+                Two-factor authentication using TOTP
+              </p>
+            </div>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+            totpEnabled
+              ? 'bg-green-500/20 text-green-400'
+              : 'bg-gray-700 text-gray-400'
+          }`}>
+            {totpEnabled ? '✅ Enabled' : 'Disabled'}
+          </span>
+        </div>
+
+        {/* Setup TOTP */}
+        {!totpEnabled && !showSetup && (
+          <Button onClick={handleSetupTOTP} disabled={isLoading}>
+            {isLoading ? 'Setting up...' : 'Enable Google Authenticator'}
+          </Button>
+        )}
+
+        {/* QR Code Setup */}
+        {showSetup && (
+          <div className="mt-4">
+            <p className="text-gray-300 text-sm mb-4">
+              Scan this QR code with Google Authenticator:
+            </p>
+
+            {/* QR Code */}
+            {qrCode && (
+              <div className="bg-white p-4 rounded-lg inline-block mb-4">
+                <img src={qrCode} alt="QR Code" className="w-48 h-48" />
+              </div>
+            )}
+
+            {/* Manual entry */}
+            <div className="bg-gray-700 rounded-lg p-3 mb-4">
+              <p className="text-gray-400 text-xs mb-1">Or enter manually:</p>
+              <p className="text-white font-mono text-sm break-all">{secretKey}</p>
+            </div>
+
+            {/* Verify token */}
+            <div>
+              <label className="text-gray-300 text-sm font-medium mb-2 block">
+                Enter code from app to verify:
+              </label>
+              <Input
+                value={token}
+                onChange={setToken}
+                placeholder="Enter 6-digit code"
+              />
+            </div>
+
+            <div className="flex gap-3 mt-4">
+              <Button onClick={handleVerifySetup} disabled={isLoading}>
+                {isLoading ? 'Verifying...' : 'Verify & Enable'}
+              </Button>
+              <button
+                onClick={() => { setShowSetup(false); setToken('') }}
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Disable TOTP */}
+        {totpEnabled && !showDisable && (
+          <button
+            onClick={() => setShowDisable(true)}
+            className="text-red-400 hover:text-red-300 text-sm transition-colors"
+          >
+            Disable Google Authenticator
+          </button>
+        )}
+
+        {showDisable && (
+          <div className="mt-4">
+            <p className="text-gray-300 text-sm mb-3">
+              Enter code from Google Authenticator to disable:
+            </p>
+            <Input
+              value={disableToken}
+              onChange={setDisableToken}
+              placeholder="Enter 6-digit code"
+            />
+            <div className="flex gap-3 mt-3">
+              <Button
+                onClick={handleDisableTOTP}
+                disabled={isLoading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isLoading ? 'Disabling...' : 'Disable'}
+              </Button>
+              <button
+                onClick={() => { setShowDisable(false); setDisableToken('') }}
+                className="text-gray-400 hover:text-white text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* App Info */}
+      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 mt-4">
+        <h2 className="text-white font-semibold mb-4">App Info</h2>
+        <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <p className="text-gray-400 text-sm">App</p>
-            <p className="text-white text-sm">RAG SQL Assistant</p>
+            <span className="text-gray-400">Version</span>
+            <span className="text-white">1.0.0</span>
           </div>
           <div className="flex justify-between">
-            <p className="text-gray-400 text-sm">Version</p>
-            <p className="text-white text-sm">1.0.0</p>
+            <span className="text-gray-400">Backend</span>
+            <span className="text-white">Django 6.0.4</span>
           </div>
           <div className="flex justify-between">
-            <p className="text-gray-400 text-sm">Backend</p>
-            <p className="text-white text-sm">Django 6 + Groq</p>
-          </div>
-          <div className="flex justify-between">
-            <p className="text-gray-400 text-sm">Frontend</p>
-            <p className="text-white text-sm">React 19 + TypeScript</p>
+            <span className="text-gray-400">AI Model</span>
+            <span className="text-white">Groq LLaMA</span>
           </div>
         </div>
       </div>

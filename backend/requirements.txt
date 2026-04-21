@@ -90,6 +90,7 @@ ormsgpack==1.12.2
 overrides==7.7.0
 packaging==26.0
 pandas==3.0.2
+pillow==12.2.0
 propcache==0.4.1
 protobuf==6.33.6
 psycopg2-binary==2.9.11
@@ -100,11 +101,13 @@ pydantic-settings==2.13.1
 pydantic_core==2.41.5
 Pygments==2.20.0
 PyJWT==2.12.1
+pyotp==2.9.0
 PyPika==0.51.1
 pyproject_hooks==1.2.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 PyYAML==6.0.3
+qrcode==8.2
 redis==7.4.0
 referencing==0.37.0
 regex==2026.4.4
