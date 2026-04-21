@@ -77,7 +77,11 @@ export const authAPI = {
   updateProfile: async (data: {email?: string, first_name?: string, last_name?: string}) => {
     const response = await api.put('/api/auth/profile/update/', data)
     return response.data
-  }
+  },
+  verifyOTP: async (user_id: number, otp: string) => {
+    const response = await api.post('/api/auth/verify-otp/', { user_id, otp })
+    return response.data
+  },
 }
 
 export default api

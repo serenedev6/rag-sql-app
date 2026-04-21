@@ -9,6 +9,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { useAuthStore } from './store/authStore'
+import { OTPVerifyPage } from './pages/OTPVerifyPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -76,6 +77,10 @@ function App() {
               </DashboardLayout>
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/verify-otp"
+          element={<OTPVerifyPage />}
         />
       </Routes>
     </BrowserRouter>

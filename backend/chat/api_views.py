@@ -5,9 +5,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .serializers import RegisterSerializer, UserSerializer
-from .models import ChatHistory
+from .models import ChatHistory, EmailOTP
 from django_ratelimit.decorators  import ratelimit
 from django.utils.decorators  import method_decorator
+from .email_utils import send_otp_email
+from django.conf import settings
 
 
 @api_view(['POST'])
@@ -80,6 +82,24 @@ def login(request):
 
     user = authenticate(username=username, password=password)
     if user:
+        # Check if MFA is enabled
+        if settings.MFA_ENABLED:
+            if not user.email:
+                return Response(
+                    {'error': 'No email address associated with this account.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # Generate and send OTP
+            otp_obj = EmailOTP.generate_otp(user)
+            send_otp_email(user.email, user.username, otp_obj.otp)
+
+            return Response({
+                'mfa_required': True,
+                'user_id': user.id,
+                'message': f'OTP sent to {user.email[:3]}***@{user.email.split("@")[1]}'
+            })
+
+        # MFA disabled - return tokens directly
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
@@ -114,6 +134,86 @@ def login(request):
         status=status.HTTP_401_UNAUTHORIZED
     )
 
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@ratelimit(key='ip', rate='5/m', method='POST', block=False)
+def verify_otp(request):
+    was_limited = getattr(request, 'limited', False)
+    if was_limited:
+        return Response(
+            {'error': 'Too many attempts. Please try again in a minute.'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    user_id = request.data.get('user_id')
+    otp_code = request.data.get('otp')
+
+    if not user_id or not otp_code:
+        return Response(
+            {'error': 'user_id and otp are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        from django.contrib.auth.models import User
+        user = User.objects.get(id=user_id)
+        otp_obj = EmailOTP.objects.filter(
+            user=user,
+            otp=otp_code,
+            is_used=False
+        ).latest('created_at')
+
+        if not otp_obj.is_valid():
+            return Response(
+                {'error': 'OTP has expired. Please login again.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark OTP as used
+        otp_obj.is_used = True
+        otp_obj.save()
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        response = Response({
+            'user': UserSerializer(user).data,
+            'access': access_token,
+            'refresh': refresh_token,
+        })
+
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=3600,
+        )
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite='Lax',
+            max_age=604800,
+        )
+
+        return response
+
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'Invalid user'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except EmailOTP.DoesNotExist:
+        return Response(
+            {'error': 'Invalid OTP'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

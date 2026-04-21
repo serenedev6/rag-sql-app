@@ -24,6 +24,16 @@ export const LoginPage = () => {
 
     try {
       const response = await authAPI.login(username, password)
+      if (response.mfa_required) {
+        navigate('/verify-otp', {
+          state: {
+            user_id: response.user_id,
+            message: response.message
+          }
+        })
+        return
+      }
+
       setAuth(response.user, response.access, response.refresh)
       navigate('/')
     } catch (err: unknown) {

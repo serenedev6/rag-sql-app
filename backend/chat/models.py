@@ -14,3 +14,34 @@ class ChatHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.question[:50]}"
+    
+
+import random
+import string
+from django.utils import timezone
+from datetime import timedelta
+
+class EmailOTP(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_valid(self):
+        # OTP valid for 10 minutes
+        expiry = self.created_at + timedelta(minutes=10)
+        return not self.is_used and timezone.now() < expiry
+
+    @classmethod
+    def generate_otp(cls, user):
+        # Delete old OTPs for this user
+        cls.objects.filter(user=user).delete()
+        # Generate new 6-digit OTP
+        otp = ''.join(random.choices(string.digits, k=6))
+        return cls.objects.create(user=user, otp=otp)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.otp}"
