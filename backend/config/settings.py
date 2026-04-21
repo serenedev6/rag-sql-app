@@ -64,9 +64,16 @@ RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'chat.views.rate_limit_exceeded'
 
 #Cache Settings
+import os
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 

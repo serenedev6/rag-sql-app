@@ -6,6 +6,8 @@ from rest_framework.response import Response
 import json
 import sys
 import os
+from django.core.cache import cache
+import hashlib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -105,6 +107,14 @@ def ask_question(request):
     answer = ''        # ← initialize with default
     use_sql = False    # ← initialize with default
 
+    # Check cache first
+    cache_key = f"answer_{hashlib.md5(question.lower().encode()).hexdigest()}"
+    cached_answer = cache.get(cache_key)
+
+    if cached_answer:
+        print(f"⚡ cache hit for: {question}")
+        return Response({'answer': cached_answer, 'cached': True})
+
     try:
         use_sql = any(keyword in question.lower() for keyword in SQL_KEYWORDS)
 
@@ -125,6 +135,10 @@ def ask_question(request):
                 print(f"  → {doc.page_content[:100]}")
             result = rag_ask(RAG_CHAIN, question)
             answer = result["answer"]
+
+        # Save to cache (10 minutes)
+        cache.set(cache_key, answer, timeout=600)
+        print(f"💾 Cached answer for: {question}")
 
     except Exception as e:
         answer = f"Error: {str(e)}"
