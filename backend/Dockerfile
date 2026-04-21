@@ -8,10 +8,11 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including Nginx
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -21,27 +22,18 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-
 # Copy Nginx config
 COPY nginx.conf /etc/nginx/sites-available/default
 
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-python setup_sample_db.py\n\
-python manage.py migrate\n\
-nginx\n\
-gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 2' > /start.sh
+# Copy and set up startup script
+COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Expose port
-EXPOSE 8000
-
+# Expose port 80 (Nginx)
+EXPOSE 80
 
 # Start Nginx + Gunicorn
 CMD ["/start.sh"]
-
-# Run Django server
-# CMD ["sh", "-c", "python setup_sample_db.py && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
