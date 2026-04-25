@@ -35,6 +35,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'rag-sql-app-production.up.railway.app',
     '.railway.app',  # covers all railway subdomains
+    '3.144.193.100',  # ← add EC2 public IP
 ]
 
 # Application definition
