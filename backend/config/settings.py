@@ -30,13 +30,10 @@ SECRET_KEY = 'django-insecure-hm8!o9(#exnuj&2zjhf8*+g-&i^lil^@pxv=f#dk9w=r%w79(r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'rag-sql-app-production.up.railway.app',
-    '.railway.app',  # covers all railway subdomains
-    '3.144.193.100',  # ← add EC2 public IP
-]
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS',
+    'localhost,127.0.0.1'
+).split(',')
 
 # Application definition
 
