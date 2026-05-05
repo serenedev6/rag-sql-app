@@ -8,11 +8,10 @@ ENV PYTHONUNBUFFERED=1
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies including Nginx
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
-    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -22,9 +21,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Copy Nginx config
-COPY nginx.conf /etc/nginx/sites-available/default
-
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 
@@ -32,8 +28,8 @@ RUN python manage.py collectstatic --noinput || true
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Expose port 80 (Nginx)
-EXPOSE 80
+# Expose port 8000 (Gunicorn)
+EXPOSE 8000
 
-# Start Nginx + Gunicorn
+# Start Gunicorn
 CMD ["/start.sh"]
