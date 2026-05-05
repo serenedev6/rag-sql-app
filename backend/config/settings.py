@@ -28,12 +28,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-hm8!o9(#exnuj&2zjhf8*+g-&i^lil^@pxv=f#dk9w=r%w79(r'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Load environment variables
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS',
-    'localhost,127.0.0.1'
-).split(',')
+# ALLOWED_HOSTS configuration
+if DEBUG:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+else:
+    # Production: behind ALB - ALB validates the Host header
+    ALLOWED_HOSTS = ['*']
 
 # Application definition
 
