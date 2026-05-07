@@ -3,10 +3,16 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json .
+COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Accept build argument for API URL
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build the app (VITE_API_URL gets baked into the bundle here)
 RUN npm run build
 
 # Production stage
