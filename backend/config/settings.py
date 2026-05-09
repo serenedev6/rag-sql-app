@@ -100,6 +100,7 @@ CSRF_COOKIE_SECURE = True      # HTTPS only
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "https://frontend-production-99bb.up.railway.app",
+    "https://serenemuffin.com",
 ]
 
 ROOT_URLCONF = 'config.urls'
