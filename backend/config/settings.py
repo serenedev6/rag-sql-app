@@ -103,6 +103,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "https://rag-sql-app-production.up.railway.app",
     "https://frontend-production-99bb.up.railway.app",  # ← add this
+    "http://serenemuffin-app-275704950506-us-east-2-an.s3-website.us-east-2.amazonaws.com",  # ← Add this
 ]
 
 CORS_ALLOW_CREDENTIALS = True #required for cookies!
@@ -116,6 +117,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "https://frontend-production-99bb.up.railway.app",
     "https://serenemuffin.com",
+    "http://serenemuffin-app-275704950506-us-east-2-an.s3-website.us-east-2.amazonaws.com",  # ← Add this
 ]
 
 ROOT_URLCONF = 'config.urls'
