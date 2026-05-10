@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/auth/profile/', api_views.profile, name='profile'),
     path('api/auth/profile/update/', api_views.update_profile, name='update_profile'),  # ← add this
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('debug/otp/', views.get_latest_otp, name='get_otp'),  # TEMPORARY
 
      # Chat history endpoints
     path('api/chat/history/', api_views.chat_history, name='chat_history'),

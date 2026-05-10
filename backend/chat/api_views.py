@@ -74,6 +74,29 @@ def register(request):
         )
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])  # TEMPORARY - remove after testing
+def get_latest_otp(request):
+    """TEMPORARY endpoint to retrieve OTP - DELETE AFTER TESTING"""
+    email = request.query_params.get('email')
+    if not email:
+        return Response({'error': 'email parameter required'}, status=400)
+    
+    try:
+        from django.contrib.auth.models import User
+        user = User.objects.get(email=email)
+        otp = EmailOTP.objects.filter(user=user).order_by('-created_at').first()
+        
+        if otp:
+            return Response({
+                'otp': otp.otp,
+                'created_at': otp.created_at,
+                'is_used': otp.is_used,
+                'is_valid': otp.is_valid()
+            })
+        return Response({'error': 'No OTP found'}, status=404)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
