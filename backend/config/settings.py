@@ -101,9 +101,9 @@ RATELIMIT_ENABLE = False  # Changed from True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://rag-sql-app-production.up.railway.app",
-    "https://frontend-production-99bb.up.railway.app",  # ← add this
-    "http://serenemuffin-app-275704950506-us-east-2-an.s3-website.us-east-2.amazonaws.com",  # ← Add this
+    "https://serenemuffin.com",  # ← CloudFront (main domain)
+    "https://www.serenemuffin.com",  # ← CloudFront www
+    "https://d3ilb6dpj0imrh.cloudfront.net",  # ← CloudFront direct URL
 ]
 
 CORS_ALLOW_CREDENTIALS = True #required for cookies!
@@ -115,9 +115,9 @@ CSRF_COOKIED_HTTPONLY = False  # React needs to read CSRF token
 CSRF_COOKIE_SECURE = True      # HTTPS only
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
-    "https://frontend-production-99bb.up.railway.app",
     "https://serenemuffin.com",
-    "http://serenemuffin-app-275704950506-us-east-2-an.s3-website.us-east-2.amazonaws.com",  # ← Add this
+    "https://www.serenemuffin.com",
+    "https://api.serenemuffin.com",  # ← New API subdomain
 ]
 
 ROOT_URLCONF = 'config.urls'
