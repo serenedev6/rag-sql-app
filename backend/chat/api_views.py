@@ -10,57 +10,70 @@ from django_ratelimit.decorators  import ratelimit
 from django.utils.decorators  import method_decorator
 from .email_utils import send_otp_email
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @ratelimit(key='ip', rate='3/m', method='POST', block=False)
 def register(request):
-    # Check if rate limited
-    was_limited = getattr(request, 'limited', False)
-    if was_limited:
-        return Response(
-            {
-                'error': 'Too many registration attempts. Please try again in a minute.',
-                'code': 'rate_limit_exceeded'
-            },
-            status=status.HTTP_429_TOO_MANY_REQUESTS
-        )
+    try:
+        # Check if rate limited
+        was_limited = getattr(request, 'limited', False)
+        if was_limited:
+            return Response(
+                {
+                    'error': 'Too many registration attempts. Please try again in a minute.',
+                    'code': 'rate_limit_exceeded'
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
 
-    serializer = RegisterSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
 
-        response =  Response({
-            'user': UserSerializer(user).data,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-        }, status=status.HTTP_201_CREATED)
+            response = Response({
+                'user': UserSerializer(user).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+            }, status=status.HTTP_201_CREATED)
 
-         # Set HttpOnly cookies
-        response.set_cookie(
-            key='access_token',
-            value=access_token,
-            httponly=True,
-            secure=False,
-            samesite='Lax',
-            max_age=3600,
-        )
-        response.set_cookie(
-            key='refresh_token',
-            value=refresh_token,
-            httponly=True,
-            secure=False,
-            samesite='Lax',
-            max_age=604800,
-        )
+            # Set HttpOnly cookies
+            response.set_cookie(
+                key='access_token',
+                value=access_token,
+                httponly=True,
+                secure=False,
+                samesite='Lax',
+                max_age=3600,
+            )
+            response.set_cookie(
+                key='refresh_token',
+                value=refresh_token,
+                httponly=True,
+                secure=False,
+                samesite='Lax',
+                max_age=604800,
+            )
 
-        return response
+            return response
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}", exc_info=True)
+        return Response(
+            {'error': f'Registration failed: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
