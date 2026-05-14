@@ -11,8 +11,16 @@ from django.utils.decorators  import method_decorator
 from .email_utils import send_otp_email
 from django.conf import settings
 import logging
+from .test_bedrock import test_bedrock
 
 logger = logging.getLogger(__name__)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def bedrock_test(request):
+    """Test Bedrock integration directly"""
+    result = test_bedrock()
+    return Response(result)
 
 
 @api_view(['POST'])

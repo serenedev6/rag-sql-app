@@ -21,6 +21,8 @@ urlpatterns = [
     path('api/chat/history/', api_views.chat_history, name='chat_history'),
     path('api/chat/history/clear/', api_views.clear_chat_history, name='clear_history'),
 
+    path('api/test-bedrock/', api_views.bedrock_test, name='bedrock_test'),
+
     # Verify OTP
     path('api/auth/verify-otp/', api_views.verify_otp, name='verify_otp'),
 
