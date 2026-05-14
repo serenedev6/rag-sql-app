@@ -4,7 +4,7 @@ def test_bedrock():
     """Test Bedrock directly without vector store"""
     try:
         llm = ChatBedrock(
-            model_id="anthropic.claude-3-5-haiku-20241022-v1:0",
+            model_id="us.anthropic.claude-3-5-haiku-20241022-v1:0",
             region_name="us-east-1",
             model_kwargs={
                 "temperature": 0,
