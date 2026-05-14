@@ -22,7 +22,7 @@ def create_rag_chain(vector_store: dict, top_k: int = 4):
     if use_bedrock:
         # Use AWS Bedrock Claude 3.5 Haiku
         llm = ChatBedrock(
-            model_id="anthropic.claude-3-5-haiku-20241022-v1:0",
+            model_id="us.anthropic.claude-3-5-haiku-20241022-v1:0",
             region_name="us-east-1",
             model_kwargs={
                 "temperature": 0,
