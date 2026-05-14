@@ -1,5 +1,5 @@
 # db_connector.py
-# SQL Server ya SQLite se connect karne ke liye module
+# PostgreSQL, SQL Server ya SQLite se connect karne ke liye module
 
 import os
 import sqlite3
@@ -8,12 +8,28 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# DB_TYPE=sqlite set karo .env mein SQLite use karne ke liye
-DB_TYPE = os.getenv("DB_TYPE", "sqlserver").lower()
+# DB_TYPE=sqlite, postgresql, or sqlserver
+DB_TYPE = os.getenv("DB_TYPE", "postgresql").lower()
 SQLITE_PATH = os.getenv("SQLITE_PATH", "sample.db")
 
 
+def _get_postgresql_connection():
+    """PostgreSQL connection using psycopg2"""
+    import psycopg2
+    
+    conn = psycopg2.connect(
+        host=os.getenv('DB_HOST'),
+        database=os.getenv('DB_NAME'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        port=os.getenv('DB_PORT', '5432')
+    )
+    print("✅ PostgreSQL se successfully connect ho gaya!")
+    return conn
+
+
 def _get_sqlserver_connection():
+    """SQL Server connection using pyodbc"""
     import pyodbc
     use_windows_auth = os.getenv("USE_WINDOWS_AUTH", "no").lower() == "yes"
 
@@ -42,14 +58,17 @@ def get_connection():
     """
     DB_TYPE ke hisaab se connection banata hai.
     SQLite ke liye: DB_TYPE=sqlite in .env
-    SQL Server ke liye: DB_TYPE=sqlserver (default)
+    PostgreSQL ke liye: DB_TYPE=postgresql (default)
+    SQL Server ke liye: DB_TYPE=sqlserver
     """
     try:
         if DB_TYPE == "sqlite":
             conn = sqlite3.connect(SQLITE_PATH)
             print(f"✅ SQLite se connect ho gaya: {SQLITE_PATH}")
             return conn
-        else:
+        elif DB_TYPE == "postgresql":
+            return _get_postgresql_connection()
+        else:  # sqlserver
             return _get_sqlserver_connection()
     except Exception as e:
         print(f"❌ Connection failed: {e}")
@@ -73,9 +92,9 @@ def fetch_table_data(table_name: str, columns: list = None, limit: int = None) -
     cols = ", ".join(columns) if columns else "*"
 
     if limit:
-        if DB_TYPE == "sqlite":
+        if DB_TYPE in ["sqlite", "postgresql"]:
             query = f"SELECT {cols} FROM {table_name} LIMIT {limit}"
-        else:
+        else:  # sqlserver
             query = f"SELECT TOP {limit} {cols} FROM {table_name}"
     else:
         query = f"SELECT {cols} FROM {table_name}"
@@ -106,7 +125,15 @@ def get_all_tables() -> list:
 
     if DB_TYPE == "sqlite":
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-    else:
+    elif DB_TYPE == "postgresql":
+        cursor.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        """)
+    else:  # sqlserver
         cursor.execute("""
             SELECT TABLE_NAME
             FROM INFORMATION_SCHEMA.TABLES
@@ -127,7 +154,16 @@ def get_table_schema(table_name: str) -> pd.DataFrame:
 
     if DB_TYPE == "sqlite":
         df = pd.read_sql(f"PRAGMA table_info({table_name})", conn)
-    else:
+    elif DB_TYPE == "postgresql":
+        query = f"""
+            SELECT column_name, data_type, character_maximum_length
+            FROM information_schema.columns
+            WHERE table_name = '{table_name}'
+            AND table_schema = 'public'
+            ORDER BY ordinal_position
+        """
+        df = pd.read_sql(query, conn)
+    else:  # sqlserver
         query = f"""
             SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH
             FROM INFORMATION_SCHEMA.COLUMNS
