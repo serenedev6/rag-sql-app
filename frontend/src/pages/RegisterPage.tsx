@@ -4,6 +4,8 @@ import { authAPI } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import { PasswordStrength } from '../components/ui/PasswordStrength'  // ← Add import
+
 
 export const RegisterPage = () => {
   const [username, setUsername] = useState('')
@@ -116,7 +118,9 @@ export const RegisterPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Min 8 characters"
                 disabled={isLoading}
+                showPasswordToggle={true}  // ← Add this
               />
+              <PasswordStrength password={password} />  {/* ← Add this */}
             </div>
 
             <div>
@@ -130,6 +134,7 @@ export const RegisterPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Repeat your password"
                 disabled={isLoading}
+                showPasswordToggle={true}  // ← Add this
               />
             </div>
           </div>

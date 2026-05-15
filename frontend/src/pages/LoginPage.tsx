@@ -102,6 +102,7 @@ export const LoginPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Enter your password"
                 disabled={isLoading}
+                showPasswordToggle={true}  // ← Add this
               />
             </div>
           </div>
