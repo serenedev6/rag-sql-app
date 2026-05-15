@@ -96,6 +96,7 @@ export const LoginPage = () => {
                 Password
               </label>
               <Input
+                type="password"
                 value={password}
                 onChange={setPassword}
                 onKeyPress={handleKeyPress}

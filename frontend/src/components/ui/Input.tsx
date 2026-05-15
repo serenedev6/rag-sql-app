@@ -1,4 +1,5 @@
 interface InputProps {
+  type?: string
   value: string
   onChange: (value: string) => void
   onKeyPress?: (e: React.KeyboardEvent) => void
@@ -8,6 +9,7 @@ interface InputProps {
 }
 
 export const Input = ({
+  type = "text",
   value,
   onChange,
   onKeyPress,
@@ -17,7 +19,7 @@ export const Input = ({
 }: InputProps) => {
   return (
     <input
-      type="text"
+      type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onKeyPress={onKeyPress}

@@ -110,6 +110,7 @@ export const RegisterPage = () => {
                 Password
               </label>
               <Input
+                type="password"
                 value={password}
                 onChange={setPassword}
                 onKeyPress={handleKeyPress}
@@ -123,6 +124,7 @@ export const RegisterPage = () => {
                 Confirm Password
               </label>
               <Input
+                type="password"
                 value={password2}
                 onChange={setPassword2}
                 onKeyPress={handleKeyPress}
