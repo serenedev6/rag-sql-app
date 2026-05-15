@@ -12,15 +12,14 @@ CHROMA_DB_PATH = "./chroma_db"
 def get_embeddings_model():
     use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
     
-    if use_groq or use_bedrock:
-        # Use ChromaDB default embeddings (no extra packages needed)
-        # Works for both Groq and Bedrock since they handle text, not embeddings
+    if not use_bedrock:
+        # Default to ChromaDB embeddings when not using Bedrock
         print("✅ Using ChromaDB default embeddings")
         return None
     else:
-        from langchain_ollama import OllamaEmbeddings
-        print(f"🔗 Ollama URL: {llama_host}")
-        return OllamaEmbeddings(model="nomic-embed-text", base_url=llama_host)
+        # Bedrock also uses ChromaDB
+        print("✅ Using ChromaDB default embeddings")
+        return None
 
 
 def create_vector_store(documents: List[Document], collection_name: str = "sql_rag"):
