@@ -9,10 +9,12 @@ use_groq = os.getenv("USE_GROQ", "false").lower() == "true"
 
 CHROMA_DB_PATH = "./chroma_db"
 
-
 def get_embeddings_model():
-    if use_groq:
-        # Use chromadb default embeddings (no extra packages needed)
+    use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
+    
+    if use_groq or use_bedrock:
+        # Use ChromaDB default embeddings (no extra packages needed)
+        # Works for both Groq and Bedrock since they handle text, not embeddings
         print("✅ Using ChromaDB default embeddings")
         return None
     else:
