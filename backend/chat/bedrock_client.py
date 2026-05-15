@@ -8,7 +8,7 @@ class BedrockClient:
             service_name='bedrock-runtime',
             region_name='us-east-1'  # Bedrock region
         )
-        self.model_id = "anthropic.claude-3-5-haiku-20241022-v1:0"
+        self.model_id = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
     
     def generate_response(self, prompt, max_tokens=1000):
         """
