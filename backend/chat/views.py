@@ -170,3 +170,30 @@ def ask_question(request):
         print(f"🔍 FULL TRACEBACK:")
         traceback.print_exc()
         return Response({'answer': f"Error: {str(e)}"}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ask_agent(request):
+    import traceback
+    
+    try:
+        print(f"🤖 AGENT MODE! User: {request.user}")
+        
+        question = request.data.get('question', '')
+        
+        # Import agent
+        from agent import ask_agent as agent_ask
+        
+        answer = agent_ask(question)
+        
+        return Response({'answer': answer, 'mode': 'agent'})
+        
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        print(f"❌ AGENT ERROR: {error_msg}")
+        print(f"🔍 FULL TRACEBACK:")
+        traceback.print_exc()
+        return Response({'answer': f"Error: {str(e)}"}, status=500)
+    
+
