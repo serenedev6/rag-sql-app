@@ -1,108 +1,83 @@
 # text_to_sql.py
-import sqlite3
 import os
 from langchain_groq import ChatGroq
+from langchain_aws import ChatBedrock
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
+from db_connector import get_postgres_connection
 
 load_dotenv()
 
-SQLITE_PATH = os.getenv("SQLITE_PATH", "sample.db")
-
+use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
 
 def get_schema() -> str:
-    """SQLite database ka schema fetch karta hai"""
-    conn = sqlite3.connect(SQLITE_PATH)
+    """PostgreSQL database ka schema fetch karta hai"""
+    conn = get_postgres_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    
+    # Get all tables in public schema
+    cursor.execute("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+    """)
     tables = cursor.fetchall()
-
+    
     schema = ""
     for table in tables:
         table_name = table[0]
-        cursor.execute(f"PRAGMA table_info({table_name})")
+        # Get column info
+        cursor.execute(f"""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = '{table_name}'
+        """)
         columns = cursor.fetchall()
-        col_names = ", ".join([col[1] for col in columns])
-        schema += f"Table: {table_name} | Columns: {col_names}\n"
-
+        col_info = ", ".join([f"{col[0]} ({col[1]})" for col in columns])
+        schema += f"Table: {table_name} | Columns: {col_info}\n"
+    
+    cursor.close()
     conn.close()
     return schema
 
-
-def run_sql_query(query: str) -> list:
-    """SQL query run karta hai aur results deta hai"""
-    conn = sqlite3.connect(SQLITE_PATH)
-    cursor = conn.cursor()
-    cursor.execute(query)
-    results = cursor.fetchall()
-    conn.close()
-    return results
-
-
 def answer_with_sql(question: str) -> str:
-    """
-    Natural language sawaal ko SQL mein convert karta hai
-    aur answer deta hai.
-    """
+    """Natural language question ko SQL query mein convert karke answer deta hai"""
+    
+    # Choose LLM
+    if use_bedrock:
+        llm = ChatBedrock(
+            model_id="us.anthropic.claude-3-5-haiku-20241022-v1:0",
+            region_name="us-east-1",
+            model_kwargs={"temperature": 0, "max_tokens": 1000}
+        )
+    else:
+        llm = ChatGroq(
+            api_key=os.getenv("GROQ_API_KEY"),
+            model="llama-3.3-70b-versatile",
+            temperature=0
+        )
+    
     schema = get_schema()
+    
+    # Prompt template
+    template = """You are a SQL expert. Given a database schema and a question, generate a valid PostgreSQL query.
 
-    llm = ChatGroq(
-        api_key=os.getenv("GROQ_API_KEY"),
-        model="llama-3.3-70b-versatile",
-        temperature=0
-    )
-
-    # Step 1: SQL query generate karo
-    sql_prompt = PromptTemplate.from_template("""
-Tum ek SQL expert ho. Neeche diye gaye database schema ke basis par 
-sawaal ka jawab dene ke liye sirf SQL query likho.
-
-Schema:
+Database Schema:
 {schema}
 
-Sawaal: {question}
+Question: {question}
 
-Rules:
-- Sirf SQL query likho — koi explanation nahi
-- Query SQLite compatible honi chahiye
-- Query sirf ek line mein likho
-- Koi markdown ya backticks mat use karo
+Return ONLY the SQL query, nothing else. Use PostgreSQL syntax."""
 
-SQL Query:
-""")
-
-    sql_chain = sql_prompt | llm
-    sql_response = sql_chain.invoke({
-        "schema": schema,
-        "question": question
-    })
-
-    sql_query = sql_response.content.strip()
-    print(f"🔧 Generated SQL: {sql_query}")
-
-    # Step 2: Query run karo
-    try:
-        results = run_sql_query(sql_query)
-    except Exception as e:
-        return f"SQL Error: {e}"
-
-    # Step 3: Results ko natural language mein convert karo
-    answer_prompt = PromptTemplate.from_template("""
-Sawaal: {question}
-SQL Query: {sql_query}
-Results: {results}
-
-In results ke basis par sawaal ka simple aur clear jawab do Hindi mein.
-Sirf jawab do — koi extra explanation nahi.
-
-Jawab:
-""")
-
-    answer_chain = answer_prompt | llm
-    answer = answer_chain.invoke({
-        "question": question,
-        "sql_query": sql_query,
-        "results": str(results)
-    })
-
-    return answer.content.strip()
+    prompt = PromptTemplate(template=template, input_variables=["schema", "question"])
+    chain = prompt | llm
+    
+    # Generate SQL
+    sql_query = chain.invoke({"schema": schema, "question": question}).content.strip()
+    
+    # Remove markdown code blocks if present
+    if sql_query.startswith("```"):
+        sql_query = sql_query.split("\n", 1)[1]
+        sql_query = sql_query.rsplit("```", 1)[0].strip()
+    
+    print(f"🔢 Generated SQL: {sql_query}")
