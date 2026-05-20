@@ -141,7 +141,12 @@ def ask_question(request):
         print(f"💾 Cached answer for: {question}")
 
     except Exception as e:
-        answer = f"Error: {str(e)}"
+        import traceback
+        error_msg = f"Error: {str(e)}"
+        print(f"❌ Chat error: {error_msg}")
+        print(f"🔍 Full traceback:")
+        traceback.print_exc()  # This will print the full error to logs
+        answer = error_msg
 
     # Save to history separately
     try:
