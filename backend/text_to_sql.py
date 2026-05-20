@@ -94,9 +94,19 @@ Return ONLY the SQL query, nothing else. Use PostgreSQL syntax."""
         if not results:
             return "No results found."
         
-        # Format results
-        answer = "\n".join([str(row) for row in results])
-        return answer
+        # Format results nicely
+        if len(results) == 1 and len(results[0]) == 1:
+            # Single value (e.g., count, max)
+            return str(results[0][0])
+        else:
+            # Multiple rows/columns - format as list
+            formatted = []
+            for row in results:
+                if len(row) == 1:
+                    formatted.append(str(row[0]))
+                else:
+                    formatted.append(" | ".join(str(val) for val in row))
+            return "\n".join(formatted)
         
     except Exception as e:
         return f"SQL Error: {str(e)}"
