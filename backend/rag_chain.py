@@ -38,6 +38,27 @@ def create_rag_chain(vector_store: dict, top_k: int = 4):
         )
         print("✅ Using Groq LLM")
 
+    # Create the prompt template
+    template = """You are a helpful assistant. Answer the question based on the context provided.
+
+        Context:
+        {context}
+
+        Question: {question}
+
+        Answer in a clear and concise way."""
+
+    prompt = PromptTemplate(template=template, input_variables=["context", "question"])
+
+    print("✅ RAG chain ready!")
+    
+    return {
+        "llm": llm,
+        "prompt": prompt,
+        "vector_store": vector_store,
+        "top_k": top_k
+    }
+
 def ask_question(rag_chain: dict, question: str) -> dict:
     from vector_store import search_similar
 
