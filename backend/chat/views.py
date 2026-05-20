@@ -11,6 +11,12 @@ import hashlib
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_ask(request):
+    print("🎯 TEST ASK ENDPOINT HIT!")
+    return Response({'answer': 'Test ask successful!'})
+
 def rate_limit_exceeded(request, exception=None):
     return JsonResponse(
         {

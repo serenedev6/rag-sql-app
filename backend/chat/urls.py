@@ -26,6 +26,7 @@ urlpatterns = [
     # Verify OTP
     path('api/auth/verify-otp/', api_views.verify_otp, name='verify_otp'),
 
+    path('test-ask/', views.test_ask, name='test_ask'),
     path('api/test-chat/', api_views.test_chat, name='test_chat'),
     # Google Authenticator - TOTP
     path('api/auth/totp/setup/', api_views.totp_setup, name='totp_setup'),
