@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from langchain_aws import ChatBedrock
 from langchain_core.prompts import PromptTemplate
 from dotenv import load_dotenv
-from db_connector import get_postgres_connection
+from db_connector import get_connection
 
 load_dotenv()
 
@@ -12,7 +12,7 @@ use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
 
 def get_schema() -> str:
     """PostgreSQL database ka schema fetch karta hai"""
-    conn = get_postgres_connection()
+    conn = get_connection()
     cursor = conn.cursor()
     
     # Get all tables in public schema
@@ -81,3 +81,23 @@ Return ONLY the SQL query, nothing else. Use PostgreSQL syntax."""
         sql_query = sql_query.rsplit("```", 1)[0].strip()
     
     print(f"🔢 Generated SQL: {sql_query}")
+    
+    # Execute SQL  ← ADD FROM HERE
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(sql_query)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not results:
+            return "No results found."
+        
+        # Format results
+        answer = "\n".join([str(row) for row in results])
+        return answer
+        
+    except Exception as e:
+        return f"SQL Error: {str(e)}"
+    
