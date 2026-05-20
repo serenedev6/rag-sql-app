@@ -16,7 +16,6 @@ ollama_host = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 use_groq = os.getenv("USE_GROQ", "false").lower() == "true"
 use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"  # ← NEW
 
-
 def create_rag_chain(vector_store: dict, top_k: int = 4):
     # Choose LLM based on environment variable
     if use_bedrock:
@@ -30,44 +29,14 @@ def create_rag_chain(vector_store: dict, top_k: int = 4):
             }
         )
         print("✅ Using AWS Bedrock (Claude 3.5 Haiku)")
-        
-    elif use_groq:
-        # Use Groq
+    else:
+        # Default to Groq (free and fast)
         llm = ChatGroq(
             api_key=os.getenv("GROQ_API_KEY"),
             model="llama-3.3-70b-versatile",
             temperature=0
         )
         print("✅ Using Groq LLM")
-        
-    else:
-        # Use Ollama (local)
-        llm = ChatOllama(
-            base_url=ollama_host,
-            model="llama3.2",
-            temperature=0
-        )
-        print("✅ Using Ollama LLM")
-
-    prompt_template = PromptTemplate.from_template("""
-Tum ek helpful data assistant ho. Neeche diye gaye context ke basis par sawaal ka jawab do.
-
-Context:
-{context}
-
-Sawaal: {question}
-
-Instructions:
-- Sirf context mein diye gaye information se jawab do
-- Agar context mein jawab nahi hai toh clearly bolo "Mujhe is sawaal ka jawab context mein nahi mila"
-- Jawab clear aur concise rakho
-
-Jawab:
-""")
-
-    print("✅ RAG chain ready!")
-    return {"llm": llm, "prompt": prompt_template, "vector_store": vector_store, "top_k": top_k}
-
 
 def ask_question(rag_chain: dict, question: str) -> dict:
     from vector_store import search_similar
