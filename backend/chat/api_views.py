@@ -22,6 +22,17 @@ def bedrock_test(request):
     result = test_bedrock()
     return Response(result)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_chat(request):
+    print("🎯 TEST ENDPOINT HIT!")
+    print(f"👤 User: {request.user}")
+    print(f"📝 Data: {request.data}")
+    return Response({
+        'answer': 'Test successful!', 
+        'user': str(request.user),
+        'authenticated': request.user.is_authenticated
+    })
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
