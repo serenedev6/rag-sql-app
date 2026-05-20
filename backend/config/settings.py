@@ -69,31 +69,13 @@ RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'chat.views.rate_limit_exceeded'
 
-#Cache Settings
-# Cache Settings
-import os
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
-
-# Try to use Redis, but fall back to in-memory cache if it fails
-try:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django_redis.cache.RedisCache',
-            'LOCATION': REDIS_URL,
-            'OPTIONS': {
-                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-                'SOCKET_CONNECT_TIMEOUT': 5,
-                'SOCKET_TIMEOUT': 5,
-            }
-        }
+# Cache Settings - Using local memory cache
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
-except Exception:
-    # Fallback to dummy cache if Redis unavailable
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-        }
-    }
+}
 
 # Disable rate limiting if Redis is unavailable
 RATELIMIT_ENABLE = False  # Changed from True
