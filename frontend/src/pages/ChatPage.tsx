@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input'
 
 export const ChatPage = () => {
   const [question, setQuestion] = useState('')
+  const [useAgent, setUseAgent] = useState(false)  // ← New: Agent mode toggle
   const bottomRef = useRef<HTMLDivElement>(null)
   const { messages, isLoading, addMessage, setLoading } = useChatStore()
 
@@ -24,13 +25,17 @@ export const ChatPage = () => {
     setLoading(true)
 
     try {
-      const response = await chatAPI.askQuestion(userQuestion)
+      // ← Changed: Use agent or regular endpoint based on toggle
+      const response = useAgent 
+        ? await chatAPI.askAgent(userQuestion)
+        : await chatAPI.askQuestion(userQuestion)
+        
       addMessage({
         id: uuidv4(),
         question: userQuestion,
         answer: response.answer,
         timestamp: new Date(),
-        mode: response.mode,
+        mode: response.mode || (useAgent ? 'agent' : 'auto'),
       })
     } catch (error) {
       addMessage({
@@ -55,7 +60,9 @@ export const ChatPage = () => {
         <span className="text-2xl">🧠</span>
         <div>
           <h1 className="text-white font-semibold text-lg">RAG SQL Assistant</h1>
-          <p className="text-gray-400 text-sm">Powered by LangChain + Groq</p>
+          <p className="text-gray-400 text-sm">
+            {useAgent ? 'Agent Mode: Multi-tool reasoning' : 'Quick Mode: Fast keyword-based'}
+          </p>
         </div>
       </div>
 
@@ -96,7 +103,7 @@ export const ChatPage = () => {
             {isLoading && (
               <div className="flex justify-start mb-4">
                 <div className="bg-gray-800 border border-gray-700 text-gray-400 px-4 py-3 rounded-2xl rounded-bl-sm">
-                  ⏳ Thinking...
+                  {useAgent ? '🤖 Agent thinking...' : '⏳ Thinking...'}
                 </div>
               </div>
             )}
@@ -107,12 +114,40 @@ export const ChatPage = () => {
 
       {/* Input area */}
       <div className="bg-gray-800 border-t border-gray-700 px-6 py-4">
+        {/* ← New: Mode Toggle */}
+        <div className="max-w-4xl mx-auto mb-3 flex items-center justify-center gap-2">
+          <button
+            onClick={() => setUseAgent(false)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              !useAgent
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+            }`}
+          >
+            ⚡ Quick Mode
+          </button>
+          <button
+            onClick={() => setUseAgent(true)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              useAgent
+                ? 'bg-purple-600 text-white shadow-lg'
+                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+            }`}
+          >
+            🤖 Agent Mode
+          </button>
+        </div>
+        
         <div className="flex gap-3 max-w-4xl mx-auto">
           <Input
             value={question}
             onChange={setQuestion}
             onKeyPress={handleKeyPress}
-            placeholder="Ask a question about your data..."
+            placeholder={
+              useAgent
+                ? "Ask complex questions (I'll use multiple tools)..."
+                : "Ask a question about your data..."
+            }
             disabled={isLoading}
           />
           <Button

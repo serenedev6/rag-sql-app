@@ -41,6 +41,10 @@ export const chatAPI = {
     const response = await api.post('/ask/', { question })
     return response.data
   },
+  askAgent: async (question: string) => {  // ← Add this new function
+    const response = await api.post('/ask-agent/', { question })
+    return response.data
+  },
   getHistory: async () => {
     const response = await api.get('/api/chat/history/')
     return response.data;
