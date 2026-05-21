@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import api_views
 from rest_framework_simplejwt.views import TokenRefreshView
+from . import streaming_views  
 
 urlpatterns = [
     # Django template views
@@ -23,6 +24,11 @@ urlpatterns = [
 
     path('api/test-bedrock/', api_views.bedrock_test, name='bedrock_test'),
 
+
+    # In urlpatterns list, add:
+    path('ask-stream/', streaming_views.ask_stream, name='ask_stream'),
+    path('ask-agent-stream/', streaming_views.ask_agent_stream, name='ask_agent_stream'),
+    
     # Verify OTP
     path('api/auth/verify-otp/', api_views.verify_otp, name='verify_otp'),
 

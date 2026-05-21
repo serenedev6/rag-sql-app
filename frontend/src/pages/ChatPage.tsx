@@ -24,31 +24,65 @@ export const ChatPage = () => {
     setQuestion('')
     setLoading(true)
 
+    // Add user message and placeholder for assistant
+    const messageId = uuidv4()
+    addMessage({
+      id: messageId,
+      question: userQuestion,
+      answer: '', // Empty initially, will be filled by streaming
+      timestamp: new Date(),
+      mode: useAgent ? 'agent' : 'auto',
+    })
+
     try {
-      // ← Changed: Use agent or regular endpoint based on toggle
-      const response = useAgent 
-        ? await chatAPI.askAgent(userQuestion)
-        : await chatAPI.askQuestion(userQuestion)
-        
-      addMessage({
-        id: uuidv4(),
-        question: userQuestion,
-        answer: response.answer,
-        timestamp: new Date(),
-        mode: response.mode || (useAgent ? 'agent' : 'auto'),
-      })
+      let streamedAnswer = ''
+      
+      const onChunk = (chunk: string) => {
+        streamedAnswer += chunk
+        // Update the message in real-time
+        useChatStore.setState((state) => ({
+          messages: state.messages.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, answer: streamedAnswer }
+              : msg
+          ),
+        }))
+      }
+
+      const onDone = () => {
+        setLoading(false)
+      }
+
+      const onError = (error: string) => {
+        useChatStore.setState((state) => ({
+          messages: state.messages.map((msg) =>
+            msg.id === messageId
+              ? { ...msg, answer: `❌ Error: ${error}` }
+              : msg
+          ),
+        }))
+        setLoading(false)
+      }
+
+      // Use streaming API based on mode
+      if (useAgent) {
+        chatAPI.askAgentStream(userQuestion, onChunk, onDone, onError)
+      } else {
+        chatAPI.askQuestionStream(userQuestion, onChunk, onDone, onError)
+      }
+
     } catch (error) {
-      addMessage({
-        id: uuidv4(),
-        question: userQuestion,
-        answer: '❌ Error: Could not get answer. Please try again.',
-        timestamp: new Date(),
-      })
-    } finally {
+      useChatStore.setState((state) => ({
+        messages: state.messages.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, answer: '❌ Error: Could not get answer. Please try again.' }
+            : msg
+        ),
+      }))
       setLoading(false)
     }
   }
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSend()
   }

@@ -41,9 +41,102 @@ export const chatAPI = {
     const response = await api.post('/ask/', { question })
     return response.data
   },
-  askAgent: async (question: string) => {  // ← Add this new function
+  askAgent: async (question: string) => {
     const response = await api.post('/ask-agent/', { question })
     return response.data
+  },
+  // ← Add streaming versions
+  askQuestionStream: (question: string, onChunk: (chunk: string) => void, onDone: () => void, onError: (error: string) => void) => {
+    const authData = localStorage.getItem('auth-storage')
+    if (!authData) {
+      onError('Not authenticated')
+      return
+    }
+    
+    const { state } = JSON.parse(authData)
+    const token = state?.accessToken
+    
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/ask-stream/?question=${encodeURIComponent(question)}&token=${token}`
+    )
+    
+    // Note: EventSource doesn't support POST with auth headers easily
+    // So we'll use fetch with SSE instead
+    fetch(`${API_BASE_URL}/ask-stream/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ question })
+    }).then(async (response) => {
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      
+      while (true) {
+        const { done, value } = await reader!.read()
+        if (done) break
+        
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+            if (data.type === 'chunk') {
+              onChunk(data.content)
+            } else if (data.type === 'done') {
+              onDone()
+            } else if (data.type === 'error') {
+              onError(data.content)
+            }
+          }
+        }
+      }
+    }).catch(onError)
+  },
+  askAgentStream: (question: string, onChunk: (chunk: string) => void, onDone: () => void, onError: (error: string) => void) => {
+    const authData = localStorage.getItem('auth-storage')
+    if (!authData) {
+      onError('Not authenticated')
+      return
+    }
+    
+    const { state } = JSON.parse(authData)
+    const token = state?.accessToken
+    
+    fetch(`${API_BASE_URL}/ask-agent-stream/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ question })
+    }).then(async (response) => {
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      
+      while (true) {
+        const { done, value } = await reader!.read()
+        if (done) break
+        
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+            if (data.type === 'chunk') {
+              onChunk(data.content)
+            } else if (data.type === 'done') {
+              onDone()
+            } else if (data.type === 'error') {
+              onError(data.content)
+            }
+          }
+        }
+      }
+    }).catch(onError)
   },
   getHistory: async () => {
     const response = await api.get('/api/chat/history/')
