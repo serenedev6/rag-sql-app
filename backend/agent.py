@@ -5,10 +5,15 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import os
 from dotenv import load_dotenv
+from typing import Optional  # ← Add this
 
 load_dotenv()
 
 use_bedrock = os.getenv("USE_BEDROCK", "false").lower() == "true"
+
+
+# ← Add this global variable
+UPLOADED_FILE_DATA: Optional[dict] = None
 
 # Define tools
 @tool
@@ -31,6 +36,45 @@ def rag_search_tool(question: str) -> str:
     
     result = rag_ask(RAG_CHAIN, question)
     return result["answer"]
+
+# ← Add this new tool
+@tool
+def file_search_tool(question: str) -> str:
+    """Search uploaded file content (resume, documents, CSV, PDF, etc.).
+    Use when question is about uploaded files, documents, or personal information."""
+    global UPLOADED_FILE_DATA
+    
+    if not UPLOADED_FILE_DATA:
+        return "No file uploaded. Ask user to upload a file first."
+    
+    from langchain_groq import ChatGroq
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_core.output_parsers import StrOutputParser
+    import os
+    
+    llm = ChatGroq(
+        api_key=os.getenv("GROQ_API_KEY"),
+        model="llama-3.3-70b-versatile",
+        temperature=0
+    )
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Answer questions based on the uploaded file data."),
+        ("human", """File Content:
+{file_data}
+
+Question: {question}
+
+Answer:""")
+    ])
+    
+    chain = prompt | llm | StrOutputParser()
+    answer = chain.invoke({
+        'file_data': str(UPLOADED_FILE_DATA),
+        'question': question
+    })
+    
+    return answer
 
 def ask_agent(question: str) -> str:
     """Simple agent that decides which tool to use and executes it"""
@@ -55,9 +99,10 @@ def ask_agent(question: str) -> str:
 
 - sql_query: For questions needing exact data (counts, max/min, filtering, "how many", "most expensive", "list all")
 - rag_search: For questions needing descriptions ("tell me about", "describe", "what is")
-- both: For complex questions needing both data AND descriptions
+- file_search: For questions about uploaded files, documents, resumes, or personal information  
+- both: For complex questions needing multiple tools
 
-Respond with ONLY: "sql_query", "rag_search", or "both" """),
+Respond with ONLY: "sql_query", "rag_search", "file_search", or "both" """),
         ("human", "{question}")
     ])
     
@@ -66,32 +111,48 @@ Respond with ONLY: "sql_query", "rag_search", or "both" """),
     
     print(f"🤖 Agent decision: {tool_choice}")
     
-    # Step 2: Execute tool(s)
     if "both" in tool_choice:
-        # Use both tools
+        # Use multiple tools
+        print("🔧 Using multiple tools...")
+        
+        results = []
+        
+        # Try file search if file uploaded
+        global UPLOADED_FILE_DATA
+        if UPLOADED_FILE_DATA:
+            print("🔧 Using file search tool...")
+            file_result = file_search_tool.invoke(question)
+            results.append(f"File data: {file_result}")
+        
+        # Use SQL
         print("🔧 Using SQL tool...")
         sql_result = sql_query_tool.invoke(question)
+        results.append(f"Database data: {sql_result}")
+        
+        # Use RAG
         print("🔧 Using RAG tool...")
         rag_result = rag_search_tool.invoke(question)
+        results.append(f"Descriptions: {rag_result}")
         
-        # Step 3: Combine results
+        # Combine results
         combine_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant. Combine the SQL data and descriptions into a clear answer."),
+            ("system", "Combine all the information into a clear answer."),
             ("human", """Question: {question}
 
-SQL Data: {sql_data}
+Results: {results}
 
-Descriptions: {rag_data}
-
-Provide a complete answer combining both sources.""")
+Provide a complete answer:""")
         ])
         
         combine_chain = combine_prompt | llm | StrOutputParser()
         answer = combine_chain.invoke({
             "question": question,
-            "sql_data": sql_result,
-            "rag_data": rag_result
+            "results": "\n\n".join(results)
         })
+        
+    elif "file" in tool_choice:
+        print("🔧 Using file search tool...")
+        answer = file_search_tool.invoke(question)
         
     elif "sql" in tool_choice:
         print("🔧 Using SQL tool...")

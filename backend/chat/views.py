@@ -221,6 +221,11 @@ def upload_and_analyze(request):
         # Process file
         from file_processor import process_file
         file_data = process_file(full_path)
+
+         # Store file data for agent access
+        from agent import UPLOADED_FILE_DATA
+        import agent
+        agent.UPLOADED_FILE_DATA = file_data  # ← Add this line
         
         # Clean up
         os.remove(full_path)
