@@ -1,8 +1,8 @@
-from langchain.agents import AgentExecutor, create_react_agent  # ← Changed
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
 from langchain_aws import ChatBedrock
-from langchain_core.prompts import PromptTemplate  # ← Changed
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 import os
 from dotenv import load_dotenv
 
@@ -32,8 +32,8 @@ def rag_search_tool(question: str) -> str:
     result = rag_ask(RAG_CHAIN, question)
     return result["answer"]
 
-def create_agent():
-    """Create LangChain ReAct agent with SQL and RAG tools"""
+def ask_agent(question: str) -> str:
+    """Simple agent that decides which tool to use and executes it"""
     
     # Choose LLM
     if use_bedrock:
@@ -49,40 +49,56 @@ def create_agent():
             temperature=0
         )
     
-    # Define tools
-    tools = [sql_query_tool, rag_search_tool]
+    # Step 1: Decide which tool(s) to use
+    decision_prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a routing assistant. Analyze the user's question and decide which tool(s) to use:
+
+- sql_query: For questions needing exact data (counts, max/min, filtering, "how many", "most expensive", "list all")
+- rag_search: For questions needing descriptions ("tell me about", "describe", "what is")
+- both: For complex questions needing both data AND descriptions
+
+Respond with ONLY: "sql_query", "rag_search", or "both" """),
+        ("human", "{question}")
+    ])
     
-    # Create ReAct prompt template
-    template = """Answer the following questions as best you can. You have access to the following tools:
-
-{tools}
-
-Use the following format:
-
-Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
-Action Input: the input to the action
-Observation: the result of the action
-... (this Thought/Action/Action Input/Observation can repeat N times)
-Thought: I now know the final answer
-Final Answer: the final answer to the original input question
-
-Begin!
-
-Question: {input}
-Thought:{agent_scratchpad}"""
-
-    prompt = PromptTemplate.from_template(template)
+    decision_chain = decision_prompt | llm | StrOutputParser()
+    tool_choice = decision_chain.invoke({"question": question}).strip().lower()
     
-    # Create agent
-    agent = create_react_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
+    print(f"🤖 Agent decision: {tool_choice}")
     
-    return agent_executor
+    # Step 2: Execute tool(s)
+    if "both" in tool_choice:
+        # Use both tools
+        print("🔧 Using SQL tool...")
+        sql_result = sql_query_tool.invoke(question)
+        print("🔧 Using RAG tool...")
+        rag_result = rag_search_tool.invoke(question)
+        
+        # Step 3: Combine results
+        combine_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are a helpful assistant. Combine the SQL data and descriptions into a clear answer."),
+            ("human", """Question: {question}
 
-def ask_agent(question: str) -> str:
-    """Ask the agent a question"""
-    agent = create_agent()
-    result = agent.invoke({"input": question})
-    return result["output"]
+SQL Data: {sql_data}
+
+Descriptions: {rag_data}
+
+Provide a complete answer combining both sources.""")
+        ])
+        
+        combine_chain = combine_prompt | llm | StrOutputParser()
+        answer = combine_chain.invoke({
+            "question": question,
+            "sql_data": sql_result,
+            "rag_data": rag_result
+        })
+        
+    elif "sql" in tool_choice:
+        print("🔧 Using SQL tool...")
+        answer = sql_query_tool.invoke(question)
+        
+    else:  # rag
+        print("🔧 Using RAG tool...")
+        answer = rag_search_tool.invoke(question)
+    
+    return answer
