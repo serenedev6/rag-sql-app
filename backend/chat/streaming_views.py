@@ -1,6 +1,7 @@
 from django.http import StreamingHttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 import json
 import time
 
@@ -15,9 +16,8 @@ def stream_chat_response(answer_text: str):
             'done': False
         }
         yield f"data: {json.dumps(chunk)}\n\n"
-        time.sleep(0.02)  # Small delay for smooth streaming effect
+        time.sleep(0.02)
     
-    # Send done signal
     final_chunk = {'type': 'done', 'content': '', 'done': True}
     yield f"data: {json.dumps(final_chunk)}\n\n"
 
@@ -30,14 +30,27 @@ def ask_stream(request):
     try:
         question = request.data.get('question', '')
         
-        # Import and call regular ask_question to get full answer
-        from chat.views import ask_question
+        # Call the logic directly, not the view function
+        from chat.views import SQL_KEYWORDS, VECTOR_STORE, RAG_CHAIN
         
-        # Get full response
-        response = ask_question(request)
-        answer = response.data.get('answer', '')
+        use_sql = any(keyword in question.lower() for keyword in SQL_KEYWORDS)
         
-        # Stream it back word by word
+        if use_sql:
+            print("🔢 SQL mode use kar raha hoon...")
+            from text_to_sql import answer_with_sql
+            answer = answer_with_sql(question)
+        else:
+            print("🔍 RAG mode use kar raha hoon...")
+            from rag_chain import ask_question as rag_ask, create_rag_chain
+            
+            global RAG_CHAIN
+            if RAG_CHAIN is None:
+                RAG_CHAIN = create_rag_chain(VECTOR_STORE, top_k=10)
+            
+            result = rag_ask(RAG_CHAIN, question)
+            answer = result["answer"]
+        
+        # Stream the answer
         return StreamingHttpResponse(
             stream_chat_response(answer),
             content_type='text/event-stream',
@@ -52,7 +65,6 @@ def ask_stream(request):
         print(f"❌ STREAM ERROR: {error_msg}")
         traceback.print_exc()
         
-        # Stream error message
         error_chunk = {'type': 'error', 'content': error_msg, 'done': True}
         return StreamingHttpResponse(
             [f"data: {json.dumps(error_chunk)}\n\n"],
@@ -68,14 +80,11 @@ def ask_agent_stream(request):
     try:
         question = request.data.get('question', '')
         
-        # Import and call agent
-        from chat.views import ask_agent
+        # Call agent logic directly
+        from agent import ask_agent as agent_ask
+        answer = agent_ask(question)
         
-        # Get full response
-        response = ask_agent(request)
-        answer = response.data.get('answer', '')
-        
-        # Stream it back
+        # Stream the answer
         return StreamingHttpResponse(
             stream_chat_response(answer),
             content_type='text/event-stream',
