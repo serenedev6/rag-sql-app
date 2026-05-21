@@ -81,7 +81,7 @@ def build_rag_pipeline():
         chunked_docs = chunk_documents(documents, chunk_size=500, chunk_overlap=50)
 
         # Step 5: Vector store banao
-        print(f"\n🧠 Step 5: Vector store bana raha hoon (embeddings)...")
+        print(f"\n🔮 Step 5: Vector store bana raha hoon (embeddings)...")
         vector_store = create_vector_store(chunked_docs)
 
     # Step 6: RAG chain banao
@@ -217,7 +217,7 @@ def run_demo_mode():
     print(f"\n📄 {len(all_docs)} documents bana liye")
 
     # Vector store banao
-    print("\n🧠 Embeddings ban rahe hain...")
+    print("\n🔮 Embeddings ban rahe hain...")
     vector_store = create_vector_store(all_docs, collection_name="demo_rag")
 
     # RAG chain banao

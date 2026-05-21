@@ -4,7 +4,7 @@ import { authAPI } from "../../services/api";
 
 const navItems = [
   { path: '/', icon: '🏠', label: 'Dashboard' },
-  { path: '/chat', icon: '🧠', label: 'Chat' },
+  { path: '/chat', icon: '🔮', label: 'Chat' },
   { path: '/history', icon: '📜', label: 'History' },
   { path: '/profile', icon: '👤', label: 'Profile' },
   { path: '/settings', icon: '⚙️', label: 'Settings' },
@@ -32,7 +32,7 @@ export const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-700">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🧠</span>
+          <span className="text-2xl">🔮</span>
           <div>
             <h1 className="text-white font-bold text-lg">RAG Assistant</h1>
             <p className="text-gray-400 text-xs">AI Powered</p>

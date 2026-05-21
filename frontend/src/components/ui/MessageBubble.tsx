@@ -19,7 +19,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         <div className="max-w-[75%] bg-gray-800 border border-gray-700 text-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-blue-400 text-xs font-medium">
-              🧠 RAG Assistant
+              🔮 RAG Assistant
             </span>
             {message.mode && (
               <span className="text-xs text-gray-500 bg-gray-700 px-2 py-0.5 rounded-full">

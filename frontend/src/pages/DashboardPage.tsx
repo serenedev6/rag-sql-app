@@ -64,7 +64,7 @@ export const DashboardPage = () => {
           onClick={() => navigate('/chat')}
           className="bg-blue-600 hover:bg-blue-700 rounded-2xl p-6 text-left transition-colors"
         >
-          <span className="text-4xl mb-3 block">🧠</span>
+          <span className="text-4xl mb-3 block">🔮</span>
           <h3 className="text-white font-bold text-lg">Start Chatting</h3>
           <p className="text-blue-200 text-sm mt-1">
             Ask questions about your data

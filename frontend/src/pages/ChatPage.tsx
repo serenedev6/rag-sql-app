@@ -91,7 +91,7 @@ export const ChatPage = () => {
     <div className="flex flex-col h-screen bg-gray-900">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-3">
-        <span className="text-2xl">🧠</span>
+        <span className="text-2xl">🔮</span>
         <div>
           <h1 className="text-white font-semibold text-lg">RAG SQL Assistant</h1>
           <p className="text-gray-400 text-sm">
@@ -104,7 +104,7 @@ export const ChatPage = () => {
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <span className="text-6xl mb-4">🧠</span>
+            <span className="text-6xl mb-4">🔮</span>
             <h2 className="text-white text-2xl font-semibold mb-2">
               Welcome to RAG SQL Assistant
             </h2>

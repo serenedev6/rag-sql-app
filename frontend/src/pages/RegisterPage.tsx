@@ -65,7 +65,7 @@ export const RegisterPage = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="text-6xl">🧠</span>
+          <span className="text-6xl">🔮</span>
           <h1 className="text-white text-3xl font-bold mt-4">
             RAG SQL Assistant
           </h1>
