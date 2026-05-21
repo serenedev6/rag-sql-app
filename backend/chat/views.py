@@ -234,7 +234,22 @@ def upload_and_analyze(request):
             return Response({'error': file_data['error']}, status=400)
         
         # If question provided, answer it using the file data
+        # If question provided, answer it using the file data
         if question:
+            # Check if vision analysis failed for images
+            if file_data.get('type') == 'image' and 'vision_error' in file_data:
+                return Response({
+                    'error': f"Vision analysis failed: {file_data['vision_error']}"
+                }, status=400)
+            
+            # Check if vision analysis succeeded for images
+            if file_data.get('type') == 'image' and 'vision_analysis' in file_data:
+                return Response({
+                    'file_info': file_data,
+                    'answer': file_data['vision_analysis']
+                })
+            
+            # For non-image files, use LLM
             from langchain_groq import ChatGroq
             from langchain_core.prompts import ChatPromptTemplate
             from langchain_core.output_parsers import StrOutputParser
