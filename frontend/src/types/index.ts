@@ -3,7 +3,7 @@ export interface Message {
   question: string
   answer: string
   timestamp: Date
-  mode?: 'sql' | 'rag'
+  mode?: 'sql' | 'rag' | 'agent' | 'auto'
 }
 
 export interface ChatResponse {
