@@ -197,3 +197,78 @@ def ask_agent(request):
         return Response({'answer': f"Error: {str(e)}"}, status=500)
     
 
+
+from django.core.files.storage import default_storage
+import os
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_and_analyze(request):
+    """Upload file and analyze it"""
+    import traceback
+    
+    try:
+        if 'file' not in request.FILES:
+            return Response({'error': 'No file provided'}, status=400)
+        
+        uploaded_file = request.FILES['file']
+        question = request.data.get('question', '')
+        
+        # Save file temporarily
+        file_path = default_storage.save(f'uploads/{uploaded_file.name}', uploaded_file)
+        full_path = os.path.join(default_storage.location, file_path)
+        
+        # Process file
+        from file_processor import process_file
+        file_data = process_file(full_path)
+        
+        # Clean up
+        os.remove(full_path)
+        
+        if 'error' in file_data:
+            return Response({'error': file_data['error']}, status=400)
+        
+        # If question provided, answer it using the file data
+        if question:
+            from langchain_groq import ChatGroq
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_core.output_parsers import StrOutputParser
+            
+            llm = ChatGroq(
+                api_key=os.getenv("GROQ_API_KEY"),
+                model="llama-3.3-70b-versatile",
+                temperature=0
+            )
+            
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", "You are a helpful assistant analyzing uploaded files."),
+                ("human", """File Data:
+{file_data}
+
+Question: {question}
+
+Provide a clear, concise answer based on the file data.""")
+            ])
+            
+            chain = prompt | llm | StrOutputParser()
+            answer = chain.invoke({
+                'file_data': str(file_data),
+                'question': question
+            })
+            
+            return Response({
+                'file_info': file_data,
+                'answer': answer
+            })
+        else:
+            # Just return file info
+            return Response({'file_info': file_data})
+            
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        print(f"❌ FILE UPLOAD ERROR: {error_msg}")
+        traceback.print_exc()
+        return Response({'error': error_msg}, status=500)
+    
+
+

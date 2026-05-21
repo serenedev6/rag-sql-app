@@ -24,7 +24,7 @@ urlpatterns = [
 
     path('api/test-bedrock/', api_views.bedrock_test, name='bedrock_test'),
 
-
+    path('upload-analyze/', views.upload_and_analyze, name='upload_analyze'),
     # In urlpatterns list, add:
     path('ask-stream/', streaming_views.ask_stream, name='ask_stream'),
     path('ask-agent-stream/', streaming_views.ask_agent_stream, name='ask_agent_stream'),

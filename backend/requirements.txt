@@ -139,3 +139,8 @@ langchain-aws>=0.3.0
 pyodbc==5.2.0
 langgraph>=0.2.0
 sse-starlette>=2.0.0
+openpyxl>=3.1.0
+PyPDF2>=3.0.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+python-docx>=1.0.0

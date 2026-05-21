@@ -41,6 +41,18 @@ export const chatAPI = {
     const response = await api.post('/ask/', { question })
     return response.data
   },
+  uploadAndAnalyze: async (file: File, question: string) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('question', question)
+    
+    const response = await api.post('/upload-analyze/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
+  },
   askAgent: async (question: string) => {
     const response = await api.post('/ask-agent/', { question })
     return response.data
