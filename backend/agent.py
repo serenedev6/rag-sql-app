@@ -1,8 +1,8 @@
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.agents import AgentExecutor, create_react_agent  # ← Changed
 from langchain_core.tools import tool
 from langchain_groq import ChatGroq
 from langchain_aws import ChatBedrock
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import PromptTemplate  # ← Changed
 import os
 from dotenv import load_dotenv
 
@@ -33,7 +33,7 @@ def rag_search_tool(question: str) -> str:
     return result["answer"]
 
 def create_agent():
-    """Create LangChain agent with SQL and RAG tools"""
+    """Create LangChain ReAct agent with SQL and RAG tools"""
     
     # Choose LLM
     if use_bedrock:
@@ -52,24 +52,32 @@ def create_agent():
     # Define tools
     tools = [sql_query_tool, rag_search_tool]
     
-    # Create prompt
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a helpful AI assistant with access to a product database.
-        
-You have two tools:
-1. sql_query_tool - For structured queries (counts, max/min, filtering)
-2. rag_search_tool - For descriptions and semantic search
+    # Create ReAct prompt template
+    template = """Answer the following questions as best you can. You have access to the following tools:
 
-For complex questions, use BOTH tools and combine the results.
+{tools}
 
-Always provide complete, helpful answers."""),
-        ("human", "{input}"),
-        ("placeholder", "{agent_scratchpad}"),
-    ])
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {input}
+Thought:{agent_scratchpad}"""
+
+    prompt = PromptTemplate.from_template(template)
     
     # Create agent
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+    agent = create_react_agent(llm, tools, prompt)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True)
     
     return agent_executor
 
