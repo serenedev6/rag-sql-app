@@ -12,10 +12,98 @@ export const ChatPage = () => {
   const bottomRef = useRef<HTMLDivElement>(null)
   const { messages, isLoading, addMessage, setLoading } = useChatStore()
 
+    // ← Add these voice states
+  const [isListening, setIsListening] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const recognitionRef = useRef<any>(null)
+  const synthRef = useRef<SpeechSynthesis | null>(null)
+
   // Auto scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Voice Recognition Setup
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition
+      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current.continuous = false
+      recognitionRef.current.interimResults = false
+      recognitionRef.current.lang = 'en-US'
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript
+        setQuestion(transcript)
+        setIsListening(false)
+      }
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false)
+      }
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false)
+      }
+    }
+
+    synthRef.current = window.speechSynthesis
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+      if (synthRef.current) {
+        synthRef.current.cancel()
+      }
+    }
+  }, [])
+
+  // Start/Stop Listening
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition not supported in this browser. Try Chrome!')
+      return
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      recognitionRef.current.start()
+      setIsListening(true)
+    }
+  }
+
+  // Speak Answer Aloud
+  const speakAnswer = (text: string) => {
+    if (!synthRef.current) {
+      alert('Text-to-speech not supported in this browser.')
+      return
+    }
+
+    // Stop any ongoing speech
+    synthRef.current.cancel()
+
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = 1.0
+    utterance.pitch = 1.0
+    utterance.volume = 1.0
+
+    utterance.onstart = () => setIsSpeaking(true)
+    utterance.onend = () => setIsSpeaking(false)
+    utterance.onerror = () => setIsSpeaking(false)
+
+    synthRef.current.speak(utterance)
+  }
+
+  // Stop Speaking
+  const stopSpeaking = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel()
+      setIsSpeaking(false)
+    }
+  }
 
   const handleSend = async () => {
     if (!question.trim() || isLoading) return
@@ -173,16 +261,32 @@ export const ChatPage = () => {
         </div>
         
         <div className="flex gap-3 max-w-4xl mx-auto">
+          {/* ← Add Microphone Button */}
+          <button
+            onClick={toggleListening}
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              isListening
+                ? 'bg-red-600 text-white animate-pulse'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+            title={isListening ? 'Stop listening' : 'Start voice input'}
+          >
+            {isListening ? '🎙️ Listening...' : '🎤'}
+          </button>
+
           <Input
             value={question}
             onChange={setQuestion}
             onKeyPress={handleKeyPress}
             placeholder={
-              useAgent
+              isListening
+                ? 'Listening...'
+                : useAgent
                 ? "Ask complex questions (I'll use multiple tools)..."
                 : "Ask a question about your data..."
             }
-            disabled={isLoading}
+            disabled={isLoading || isListening}
           />
           <Button
             onClick={handleSend}
@@ -191,6 +295,28 @@ export const ChatPage = () => {
           >
             {isLoading ? '...' : 'Send'}
           </Button>
+
+          {/* ← Add Speaker Button */}
+          {messages.length > 0 && (
+            <button
+              onClick={() => {
+                if (isSpeaking) {
+                  stopSpeaking()
+                } else {
+                  const lastMessage = messages[messages.length - 1]
+                  speakAnswer(lastMessage.answer)
+                }
+              }}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                isSpeaking
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+              title={isSpeaking ? 'Stop speaking' : 'Read last answer aloud'}
+            >
+              {isSpeaking ? '🔊 Stop' : '🔊'}
+            </button>
+          )}
         </div>
       </div>
     </div>
