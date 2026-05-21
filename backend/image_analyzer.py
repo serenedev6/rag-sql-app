@@ -36,7 +36,7 @@ def analyze_image_with_claude(image_path: str, question: str = "What's in this i
         
         # Call Claude with vision
         message = client.messages.create(
-            model="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+            model="anthropic.claude-3-5-sonnet-20241022-v2:0",
             max_tokens=1024,
             messages=[
                 {
