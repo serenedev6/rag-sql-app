@@ -220,7 +220,7 @@ def upload_and_analyze(request):
         
         # Process file
         from file_processor import process_file
-        file_data = process_file(full_path)
+        file_data = process_file(full_path, question)  # ← Pass question
 
          # Store file data for agent access
         from agent import UPLOADED_FILE_DATA

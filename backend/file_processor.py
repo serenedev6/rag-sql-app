@@ -51,19 +51,37 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
         'preview': text[:500] + '...' if len(text) > 500 else text
     }
 
-def process_image(file_path: str) -> Dict[str, Any]:
-    """Process image with OCR"""
+def process_image(file_path: str, question: str = None) -> Dict[str, Any]:
+    """Process image with OCR and optional vision analysis"""
     try:
+        from PIL import Image
+        import pytesseract
+        
         image = Image.open(file_path)
+        
+        # OCR for text extraction
         text = pytesseract.image_to_string(image)
         
-        return {
+        result = {
             'type': 'image',
             'size': image.size,
             'format': image.format,
-            'text': text,
+            'ocr_text': text,
             'preview': text[:500] + '...' if len(text) > 500 else text
         }
+        
+        # If question provided, use vision analysis
+        if question:
+            from image_analyzer import analyze_image
+            vision_result = analyze_image(file_path, question, use_bedrock=True)
+            
+            if vision_result.get('success'):
+                result['vision_analysis'] = vision_result['answer']
+            else:
+                result['vision_error'] = vision_result.get('error')
+        
+        return result
+        
     except Exception as e:
         return {
             'type': 'image',
@@ -94,7 +112,7 @@ def process_txt(file_path: str) -> Dict[str, Any]:
         'preview': text[:500] + '...' if len(text) > 500 else text
     }
 
-def process_file(file_path: str) -> Dict[str, Any]:
+def process_file(file_path: str, question: str = None) -> Dict[str, Any]:
     """Route to appropriate processor based on file extension"""
     ext = os.path.splitext(file_path)[1].lower()
     
@@ -103,9 +121,9 @@ def process_file(file_path: str) -> Dict[str, Any]:
         '.xlsx': process_excel,
         '.xls': process_excel,
         '.pdf': process_pdf,
-        '.png': process_image,
-        '.jpg': process_image,
-        '.jpeg': process_image,
+        '.png': lambda fp: process_image(fp, question),  # ← Pass question
+        '.jpg': lambda fp: process_image(fp, question),  # ← Pass question
+        '.jpeg': lambda fp: process_image(fp, question), # ← Pass question
         '.docx': process_docx,
         '.txt': process_txt,
     }
@@ -119,3 +137,6 @@ def process_file(file_path: str) -> Dict[str, Any]:
         return processor(file_path)
     except Exception as e:
         return {'type': 'error', 'error': str(e)}
+    
+
+
