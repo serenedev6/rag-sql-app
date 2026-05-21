@@ -56,10 +56,6 @@ export const chatAPI = {
     const { state } = JSON.parse(authData)
     const token = state?.accessToken
     
-    const eventSource = new EventSource(
-      `${API_BASE_URL}/ask-stream/?question=${encodeURIComponent(question)}&token=${token}`
-    )
-    
     // Note: EventSource doesn't support POST with auth headers easily
     // So we'll use fetch with SSE instead
     fetch(`${API_BASE_URL}/ask-stream/`, {
