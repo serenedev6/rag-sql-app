@@ -5,7 +5,6 @@ import { chatAPI } from '../services/api'
 import { MessageBubble } from '../components/ui/MessageBubble'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
-import { FileUpload } from '../components/FileUpload'
 
 export const ChatPage = () => {
   const [question, setQuestion] = useState('')
@@ -171,47 +170,6 @@ export const ChatPage = () => {
       setLoading(false)
     }
   }
-  
-  const handleFileAnalyze = async (file: File, question: string) => {
-    setLoading(true)
-
-    const messageId = uuidv4()
-    addMessage({
-      id: messageId,
-      question: `📁 ${file.name}: ${question}`,
-      answer: '',
-      timestamp: new Date(),
-    })
-
-    try {
-      let streamedAnswer = ''
-
-      const result = await chatAPI.uploadAndAnalyze(file, question)
-      const answer = result.answer || JSON.stringify(result.file_info, null, 2)
-
-      // Simulate streaming for consistency
-      const words = answer.split(' ')
-      for (const word of words) {
-        streamedAnswer += word + ' '
-        useChatStore.setState((state) => ({
-          messages: state.messages.map((msg) =>
-            msg.id === messageId ? { ...msg, answer: streamedAnswer } : msg
-          ),
-        }))
-        await new Promise((resolve) => setTimeout(resolve, 30))
-      }
-    } catch (error: any) {
-      useChatStore.setState((state) => ({
-        messages: state.messages.map((msg) =>
-          msg.id === messageId
-            ? { ...msg, answer: `❌ Error: ${error.message || 'File analysis failed'}` }
-            : msg
-        ),
-      }))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSend()
@@ -232,8 +190,6 @@ export const ChatPage = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
-        {/* ← Add FileUpload here */}
-        <FileUpload onAnalyze={handleFileAnalyze} isLoading={isLoading} />
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <span className="text-6xl mb-4">🔮</span>

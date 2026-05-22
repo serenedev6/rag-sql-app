@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { authAPI } from "../../services/api";
+import { SidebarFileUpload } from '../SidebarFileUpload'
 
 const navItems = [
   { path: '/', icon: '🏠', label: 'Dashboard' },
@@ -40,6 +41,14 @@ export const Sidebar = () => {
         </div>
       </div>
 
+      {/* ← Add File Upload Section Here */}
+      <div className="p-4 border-b border-gray-700">
+        <h3 className="text-gray-500 text-xs uppercase font-semibold mb-3 tracking-wide">
+          Quick Upload
+        </h3>
+        <SidebarFileUpload />
+      </div>
+      
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => (
