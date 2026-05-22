@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { authAPI } from "../../services/api";
-import { SidebarFileUpload } from '../SidebarFileUpload'
 import { useState } from 'react'  // ← Add this
 
 const navItems = [
   { path: '/', icon: '🏠', label: 'Dashboard' },
   { path: '/chat', icon: '🔮', label: 'Chat' },
+  { path: '/file-upload', icon: '📁', label: 'File Upload' },  // ← Add this
   { path: '/history', icon: '📜', label: 'History' },
   { path: '/profile', icon: '👤', label: 'Profile' },
   { path: '/settings', icon: '⚙️', label: 'Settings' },
@@ -64,14 +64,6 @@ export const Sidebar = () => {
                 <p className="text-gray-400 text-xs">AI Powered</p>
               </div>
             </div>
-          </div>
-
-          {/* File Upload Section */}
-          <div className="p-4 border-b border-gray-700">
-            <h3 className="text-gray-500 text-xs uppercase font-semibold mb-3 tracking-wide">
-              Quick Upload
-            </h3>
-            <SidebarFileUpload />
           </div>
           
           {/* Navigation */}

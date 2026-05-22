@@ -10,6 +10,7 @@ import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { useAuthStore } from './store/authStore'
 import { OTPVerifyPage } from './pages/OTPVerifyPage'
+import { FileUploadPage } from './pages/FileUploadPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -68,6 +69,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/file-upload"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <FileUploadPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/settings"
           element={
