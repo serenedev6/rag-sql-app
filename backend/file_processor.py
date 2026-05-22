@@ -52,7 +52,7 @@ def process_pdf(file_path: str) -> Dict[str, Any]:
     }
 
 def process_image(file_path: str, question: str = None) -> Dict[str, Any]:
-    """Process image with OCR and optional vision analysis"""
+    """Process image with OCR only (vision disabled due to quota)"""
     try:
         from PIL import Image
         import pytesseract
@@ -67,18 +67,9 @@ def process_image(file_path: str, question: str = None) -> Dict[str, Any]:
             'size': image.size,
             'format': image.format,
             'ocr_text': text,
-            'preview': text[:500] + '...' if len(text) > 500 else text
+            'preview': text[:500] + '...' if len(text) > 500 else text,
+            'note': 'Vision analysis temporarily disabled (Bedrock quota). OCR text extraction active.'
         }
-        
-        # If question provided, use vision analysis
-        if question:
-            from image_analyzer import analyze_image
-            vision_result = analyze_image(file_path, question, use_bedrock=True)
-            
-            if vision_result.get('success'):
-                result['vision_analysis'] = vision_result['answer']
-            else:
-                result['vision_error'] = vision_result.get('error')
         
         return result
         

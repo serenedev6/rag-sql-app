@@ -8,11 +8,10 @@ import { Input } from '../components/ui/Input'
 
 export const ChatPage = () => {
   const [question, setQuestion] = useState('')
-  const [useAgent, setUseAgent] = useState(false)  // ← New: Agent mode toggle
+  const [useAgent, setUseAgent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const { messages, isLoading, addMessage, setLoading } = useChatStore()
 
-    // ← Add these voice states
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const recognitionRef = useRef<any>(null)
@@ -82,7 +81,6 @@ export const ChatPage = () => {
       return
     }
 
-    // Stop any ongoing speech
     synthRef.current.cancel()
 
     const utterance = new SpeechSynthesisUtterance(text)
@@ -112,12 +110,11 @@ export const ChatPage = () => {
     setQuestion('')
     setLoading(true)
 
-    // Add user message and placeholder for assistant
     const messageId = uuidv4()
     addMessage({
       id: messageId,
       question: userQuestion,
-      answer: '', // Empty initially, will be filled by streaming
+      answer: '',
       timestamp: new Date(),
       mode: useAgent ? 'agent' : 'auto',
     })
@@ -127,7 +124,6 @@ export const ChatPage = () => {
       
       const onChunk = (chunk: string) => {
         streamedAnswer += chunk
-        // Update the message in real-time
         useChatStore.setState((state) => ({
           messages: state.messages.map((msg) =>
             msg.id === messageId
@@ -152,7 +148,6 @@ export const ChatPage = () => {
         setLoading(false)
       }
 
-      // Use streaming API based on mode
       if (useAgent) {
         chatAPI.askAgentStream(userQuestion, onChunk, onDone, onError)
       } else {
@@ -178,29 +173,29 @@ export const ChatPage = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-900">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center gap-3">
+      <div className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
         <span className="text-2xl">🔮</span>
         <div>
-          <h1 className="text-white font-semibold text-lg">RAG SQL Assistant</h1>
-          <p className="text-gray-400 text-sm">
+          <h1 className="text-white font-semibold text-base sm:text-lg">RAG SQL Assistant</h1>
+          <p className="text-gray-400 text-xs sm:text-sm">
             {useAgent ? 'Agent Mode: Multi-tool reasoning' : 'Quick Mode: Fast keyword-based'}
           </p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <span className="text-6xl mb-4">🔮</span>
-            <h2 className="text-white text-2xl font-semibold mb-2">
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <span className="text-4xl sm:text-6xl mb-4">🔮</span>
+            <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">
               Welcome to RAG SQL Assistant
             </h2>
-            <p className="text-gray-400 max-w-md">
+            <p className="text-gray-400 text-sm sm:text-base max-w-md">
               Ask me anything about your data. I can answer questions using
               both RAG and SQL modes.
             </p>
-            <div className="mt-6 grid grid-cols-2 gap-3 max-w-lg">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
               {[
                 'most expensive product',
                 'Yoga Mat description',
@@ -210,7 +205,7 @@ export const ChatPage = () => {
                 <button
                   key={suggestion}
                   onClick={() => setQuestion(suggestion)}
-                  className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition-colors"
+                  className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors"
                 >
                   {suggestion}
                 </button>
@@ -235,46 +230,50 @@ export const ChatPage = () => {
       </div>
 
       {/* Input area */}
-      <div className="bg-gray-800 border-t border-gray-700 px-6 py-4">
-        {/* ← New: Mode Toggle */}
+      <div className="bg-gray-800 border-t border-gray-700 px-4 sm:px-6 py-4">
+        {/* Mode Toggle */}
         <div className="max-w-4xl mx-auto mb-3 flex items-center justify-center gap-2">
           <button
             onClick={() => setUseAgent(false)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
               !useAgent
                 ? 'bg-blue-600 text-white shadow-lg'
                 : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
             }`}
           >
-            ⚡ Quick Mode
+            <span className="hidden sm:inline">⚡ Quick Mode</span>
+            <span className="sm:hidden">⚡ Quick</span>
           </button>
           <button
             onClick={() => setUseAgent(true)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
               useAgent
                 ? 'bg-purple-600 text-white shadow-lg'
                 : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
             }`}
           >
-            🤖 Agent Mode
+            <span className="hidden sm:inline">🤖 Agent Mode</span>
+            <span className="sm:hidden">🤖 Agent</span>
           </button>
         </div>
         
-        <div className="flex gap-3 max-w-4xl mx-auto">
-          {/* ← Add Microphone Button */}
+        <div className="flex gap-2 max-w-4xl mx-auto">
+          {/* Microphone Button */}
           <button
             onClick={toggleListening}
             disabled={isLoading}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
               isListening
                 ? 'bg-red-600 text-white animate-pulse'
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
             title={isListening ? 'Stop listening' : 'Start voice input'}
           >
-            {isListening ? '🎙️ Listening...' : '🎤'}
+            <span className="hidden sm:inline">{isListening ? '🎙️ Listening...' : '🎤'}</span>
+            <span className="sm:hidden">🎤</span>
           </button>
 
+          {/* Input Field */}
           <Input
             value={question}
             onChange={setQuestion}
@@ -283,20 +282,24 @@ export const ChatPage = () => {
               isListening
                 ? 'Listening...'
                 : useAgent
-                ? "Ask complex questions (I'll use multiple tools)..."
-                : "Ask a question about your data..."
+                ? "Ask complex questions..."
+                : "Ask a question..."
             }
             disabled={isLoading || isListening}
+            className="flex-1 min-w-0"
           />
+          
+          {/* Send Button */}
           <Button
             onClick={handleSend}
             disabled={isLoading || !question.trim()}
-            className="px-6"
+            className="px-4 sm:px-6 flex-shrink-0"
           >
-            {isLoading ? '...' : 'Send'}
+            <span className="hidden sm:inline">{isLoading ? '...' : 'Send'}</span>
+            <span className="sm:hidden">{isLoading ? '...' : '📤'}</span>
           </Button>
 
-          {/* ← Add Speaker Button */}
+          {/* Speaker Button */}
           {messages.length > 0 && (
             <button
               onClick={() => {
@@ -307,14 +310,15 @@ export const ChatPage = () => {
                   speakAnswer(lastMessage.answer)
                 }
               }}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
                 isSpeaking
                   ? 'bg-green-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
               title={isSpeaking ? 'Stop speaking' : 'Read last answer aloud'}
             >
-              {isSpeaking ? '🔊 Stop' : '🔊'}
+              <span className="hidden sm:inline">{isSpeaking ? '🔊 Stop' : '🔊'}</span>
+              <span className="sm:hidden">🔊</span>
             </button>
           )}
         </div>
