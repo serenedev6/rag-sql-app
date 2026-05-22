@@ -31,7 +31,7 @@ export const DashboardPage = () => {
   ]
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto min-h-full">
       {/* Welcome header */}
       <div className="mb-6 sm:mb-8">
         <h1 className="text-white text-2xl sm:text-3xl font-bold">
