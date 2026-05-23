@@ -19,19 +19,18 @@ export const ViMaxPage = () => {
   const [title, setTitle] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
   const [stream, setStream] = useState<MediaStream | null>(null)
+  const [error, setError] = useState<string>('')
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const liveVideoRef = useRef<HTMLVideoElement>(null)  // ← Live preview
-  const playbackVideoRef = useRef<HTMLVideoElement>(null)  // ← Playback
+  const liveVideoRef = useRef<HTMLVideoElement>(null)
+  const playbackVideoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Load videos on mount
   useEffect(() => {
     loadVideos()
   }, [])
 
-  // Cleanup stream on unmount
   useEffect(() => {
     return () => {
       if (stream) {
@@ -51,41 +50,79 @@ export const ViMaxPage = () => {
 
   const startRecording = async () => {
     try {
+      setError('')
+      console.log('🎥 Requesting camera access...')
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+        video: { 
+          width: { ideal: 1280 }, 
+          height: { ideal: 720 } 
         },
         audio: true
       })
+
+      console.log('✅ Camera access granted')
+      console.log('📹 Video tracks:', mediaStream.getVideoTracks())
+      console.log('🎤 Audio tracks:', mediaStream.getAudioTracks())
 
       setStream(mediaStream)
 
       // Show live preview
       if (liveVideoRef.current) {
         liveVideoRef.current.srcObject = mediaStream
-        liveVideoRef.current.play()
+        await liveVideoRef.current.play()
+        console.log('▶️ Live preview started')
+      }
+
+      // Check supported MIME types
+      const mimeTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4'
+      ]
+      
+      let selectedMimeType = ''
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType
+          console.log('✅ Using MIME type:', mimeType)
+          break
+        }
+      }
+
+      if (!selectedMimeType) {
+        throw new Error('No supported video format found')
       }
 
       const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: 'video/webm;codecs=vp9,opus'
+        mimeType: selectedMimeType
       })
 
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
       mediaRecorder.ondataavailable = (e) => {
+        console.log('📦 Data chunk received:', e.data.size, 'bytes')
         if (e.data.size > 0) {
           chunksRef.current.push(e.data)
         }
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+        console.log('⏹️ Recording stopped')
+        console.log('📦 Total chunks:', chunksRef.current.length)
+        
+        const blob = new Blob(chunksRef.current, { type: selectedMimeType })
+        console.log('💾 Blob created:', blob.size, 'bytes')
+        
         setRecordedBlob(blob)
         
         // Stop all tracks
-        mediaStream.getTracks().forEach(track => track.stop())
+        mediaStream.getTracks().forEach(track => {
+          track.stop()
+          console.log('🛑 Track stopped:', track.kind)
+        })
         setStream(null)
         
         // Clear live preview
@@ -94,27 +131,41 @@ export const ViMaxPage = () => {
         }
         
         // Show playback
-        if (playbackVideoRef.current) {
-          playbackVideoRef.current.src = URL.createObjectURL(blob)
+        if (playbackVideoRef.current && blob.size > 0) {
+          const url = URL.createObjectURL(blob)
+          console.log('🎬 Playback URL created:', url)
+          playbackVideoRef.current.src = url
+          playbackVideoRef.current.load()
+        } else {
+          console.error('❌ Blob is empty or playback ref not available')
+          setError('Recording failed - no data captured')
         }
       }
 
-      mediaRecorder.start()
+      mediaRecorder.onerror = (e) => {
+        console.error('❌ MediaRecorder error:', e)
+        setError('Recording error occurred')
+      }
+
+      mediaRecorder.start(100) // Record in 100ms chunks
+      console.log('🔴 Recording started')
+      
       setIsRecording(true)
       setRecordingTime(0)
 
-      // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1)
       }, 1000)
 
-    } catch (error) {
-      console.error('Error starting recording:', error)
-      alert('Could not access camera/microphone. Please allow permissions.')
+    } catch (error: any) {
+      console.error('❌ Error starting recording:', error)
+      setError(error.message || 'Could not access camera/microphone')
+      alert('Error: ' + (error.message || 'Could not access camera/microphone. Please allow permissions.'))
     }
   }
 
   const stopRecording = () => {
+    console.log('🛑 Stop button clicked')
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
@@ -131,16 +182,13 @@ export const ViMaxPage = () => {
     setIsUploading(true)
 
     try {
-      // Get pre-signed upload URL
       const timestamp = Date.now()
       const filename = `recording_${timestamp}.webm`
       const uploadData = await videoAPI.getUploadUrl(filename, 'video/webm')
 
-      // Upload to S3
       const success = await videoAPI.uploadToS3(uploadData.upload_url, recordedBlob)
 
       if (success) {
-        // Save metadata
         await videoAPI.saveMetadata({
           title: title || `Recording ${new Date().toLocaleString()}`,
           s3_key: uploadData.s3_key,
@@ -149,7 +197,6 @@ export const ViMaxPage = () => {
           file_size: recordedBlob.size
         })
 
-        // Reset and reload
         setRecordedBlob(null)
         setTitle('')
         setRecordingTime(0)
@@ -213,6 +260,13 @@ export const ViMaxPage = () => {
         </p>
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-700 rounded-lg p-4 mb-6 text-red-400">
+          ❌ {error}
+        </div>
+      )}
+
       {/* Recording Section */}
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6">
         <h2 className="text-white font-bold text-lg mb-4">Record New Video</h2>
@@ -225,10 +279,10 @@ export const ViMaxPage = () => {
               autoPlay
               muted
               playsInline
-              className="w-full max-w-2xl mx-auto rounded-lg bg-black"
+              className="w-full max-w-2xl mx-auto rounded-lg bg-black border-4 border-red-500"
             />
-            <p className="text-center text-white mt-2 font-semibold">
-              🔴 Recording: {formatTime(recordingTime)}
+            <p className="text-center text-white mt-2 font-semibold animate-pulse">
+              🔴 LIVE - Recording: {formatTime(recordingTime)}
             </p>
           </div>
         )}
@@ -252,6 +306,7 @@ export const ViMaxPage = () => {
               <Button onClick={() => {
                 setRecordedBlob(null)
                 setTitle('')
+                setError('')
               }} className="flex-1 bg-gray-700">
                 🔄 Record Again
               </Button>
@@ -259,7 +314,7 @@ export const ViMaxPage = () => {
                 onClick={() => downloadVideo(recordedBlob, title ? `${title}.webm` : undefined)} 
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
-                💾 Download
+                💾 Download ({formatFileSize(recordedBlob.size)})
               </Button>
               <Button onClick={uploadVideo} disabled={isUploading} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 {isUploading ? '⏳ Uploading...' : '☁️ Save to Cloud'}
@@ -272,12 +327,12 @@ export const ViMaxPage = () => {
         {recordedBlob && (
           <div className="space-y-4">
             <div>
-              <p className="text-white font-semibold mb-2">Preview:</p>
+              <p className="text-white font-semibold mb-2">Preview ({formatFileSize(recordedBlob.size)}):</p>
               <video
                 ref={playbackVideoRef}
                 controls
                 playsInline
-                className="w-full max-w-2xl mx-auto rounded-lg bg-black"
+                className="w-full max-w-2xl mx-auto rounded-lg bg-black border-2 border-green-500"
               />
             </div>
 
@@ -322,7 +377,7 @@ export const ViMaxPage = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <a
+                 <a 
                     href={video.view_url}
                     download={`${video.title || 'video'}.webm`}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm transition-colors text-center"
