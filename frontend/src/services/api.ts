@@ -36,6 +36,48 @@ api.interceptors.response.use(
   }
 )
 
+export const videoAPI = {
+  getUploadUrl: async (filename: string, contentType: string) => {
+    const response = await api.post('/videos/get-upload-url/', {
+      filename,
+      content_type: contentType
+    })
+    return response.data
+  },
+  
+  uploadToS3: async (uploadUrl: string, file: Blob) => {
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type
+      }
+    })
+    return response.ok
+  },
+  
+  saveMetadata: async (data: {
+    title: string
+    s3_key: string
+    s3_url: string
+    duration: number
+    file_size: number
+  }) => {
+    const response = await api.post('/videos/save-metadata/', data)
+    return response.data
+  },
+  
+  listVideos: async () => {
+    const response = await api.get('/videos/list/')
+    return response.data
+  },
+  
+  deleteVideo: async (videoId: number) => {
+    const response = await api.delete(`/videos/${videoId}/delete/`)
+    return response.data
+  }
+}
+
 export const chatAPI = {
   askQuestion: async (question: string) => {
     const response = await api.post('/ask/', { question })

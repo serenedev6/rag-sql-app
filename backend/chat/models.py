@@ -74,3 +74,23 @@ class TOTPDevice(models.Model):
             name=self.user.email or self.user.username,
             issuer_name="RAG SQL Assistant"
         )
+    
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class VideoRecording(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, blank=True)
+    s3_key = models.CharField(max_length=500)
+    s3_url = models.URLField(max_length=1000)
+    duration = models.IntegerField(help_text="Duration in seconds", null=True, blank=True)
+    file_size = models.BigIntegerField(help_text="File size in bytes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title or 'Untitled'} ({self.created_at})"
+    

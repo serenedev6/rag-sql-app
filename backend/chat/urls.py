@@ -3,6 +3,7 @@ from . import views
 from . import api_views
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import streaming_views  
+from . import video_views  # ← Add this import
 
 urlpatterns = [
     # Django template views
@@ -33,6 +34,13 @@ urlpatterns = [
     path('api/auth/verify-otp/', api_views.verify_otp, name='verify_otp'),
 
     path('ask-agent/', views.ask_agent, name='ask_agent'),
+
+
+     # Video recording routes
+    path('videos/get-upload-url/', video_views.get_upload_url, name='get_upload_url'),
+    path('videos/save-metadata/', video_views.save_video_metadata, name='save_video_metadata'),
+    path('videos/list/', video_views.list_videos, name='list_videos'),
+    path('videos/<int:video_id>/delete/', video_views.delete_video, name='delete_video'),
 
     path('test-ask/', views.test_ask, name='test_ask'),
     path('api/test-chat/', api_views.test_chat, name='test_chat'),

@@ -11,6 +11,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout'
 import { useAuthStore } from './store/authStore'
 import { OTPVerifyPage } from './pages/OTPVerifyPage'
 import { FileUploadPage } from './pages/FileUploadPage'
+import { ViMaxPage } from './pages/ViMaxPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -79,7 +80,16 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path='/vimax'
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ViMaxPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/settings"
           element={

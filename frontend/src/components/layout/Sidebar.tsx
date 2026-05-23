@@ -7,6 +7,7 @@ const navItems = [
   { path: '/', icon: '🏠', label: 'Dashboard' },
   { path: '/chat', icon: '🔮', label: 'Chat' },
   { path: '/file-upload', icon: '📁', label: 'File Upload' },  // ← Add this
+  { path: '/vimax', icon: '🎥', label: 'ViMax' },  // ← Add this
   { path: '/history', icon: '📜', label: 'History' },
   { path: '/profile', icon: '👤', label: 'Profile' },
   { path: '/settings', icon: '⚙️', label: 'Settings' },
