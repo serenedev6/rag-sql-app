@@ -75,41 +75,63 @@ export const ViMaxPage = () => {
         console.log('▶️ Live preview started')
       }
 
-      // Check supported MIME types (MP4 first for iOS)
-      const mimeTypes = [
-        'video/mp4',
-        'video/webm;codecs=vp9',
-        'video/webm;codecs=vp8',
-        'video/webm'
-      ]
+      // iOS Safari detection
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
       
+      console.log('📱 Device detection:', { isIOS, isSafari })
+
+      // For iOS Safari, use very specific settings
       let selectedMimeType = ''
-      for (const mimeType of mimeTypes) {
-        if (MediaRecorder.isTypeSupported(mimeType)) {
-          selectedMimeType = mimeType
-          console.log('✅ Using MIME type:', mimeType)
-          break
+      let recorderOptions: MediaRecorderOptions = {}
+      
+      if (isIOS || isSafari) {
+        // iOS Safari ONLY supports video/mp4
+        selectedMimeType = 'video/mp4'
+        recorderOptions = {
+          mimeType: 'video/mp4',
+          videoBitsPerSecond: 2500000, // 2.5 Mbps
+          audioBitsPerSecond: 128000   // 128 kbps
+        }
+        console.log('✅ Using iOS-optimized settings')
+      } else {
+        // Check supported MIME types for other browsers
+        const mimeTypes = [
+          'video/webm;codecs=vp9',
+          'video/webm;codecs=vp8',
+          'video/webm',
+          'video/mp4'
+        ]
+        
+        for (const mimeType of mimeTypes) {
+          if (MediaRecorder.isTypeSupported(mimeType)) {
+            selectedMimeType = mimeType
+            recorderOptions = { mimeType: selectedMimeType }
+            console.log('✅ Using MIME type:', mimeType)
+            break
+          }
         }
       }
 
       if (!selectedMimeType) {
-        throw new Error('No supported video format found')
+        throw new Error('No supported video format found on this device')
       }
 
       // Save MIME type for upload
       selectedMimeTypeRef.current = selectedMimeType
 
-      const mediaRecorder = new MediaRecorder(mediaStream, {
-        mimeType: selectedMimeType
-      })
+      const mediaRecorder = new MediaRecorder(mediaStream, recorderOptions)
 
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
       mediaRecorder.ondataavailable = (e) => {
-        console.log('📦 Data chunk received:', e.data.size, 'bytes')
+        console.log('📦 Data chunk received:', e.data.size, 'bytes', 'Type:', e.data.type)
         if (e.data.size > 0) {
           chunksRef.current.push(e.data)
+          console.log('✅ Chunk added. Total chunks now:', chunksRef.current.length)
+        } else {
+          console.warn('⚠️ Empty chunk received!')
         }
       }
 
@@ -157,8 +179,30 @@ export const ViMaxPage = () => {
         setError('Recording error occurred')
       }
 
-      mediaRecorder.start(100) // Record in 100ms chunks
-      console.log('🔴 Recording started with MIME type:', selectedMimeType)
+      // Start recording - iOS Safari CANNOT use timeslice!
+      if (isIOS || isSafari) {
+        mediaRecorder.start() // NO timeslice for iOS
+        console.log('🔴 Recording started (iOS mode - no timeslice)')
+      } else {
+        try {
+          mediaRecorder.start(1000) // 1 second chunks for other browsers
+          console.log('🔴 Recording started (1000ms chunks)')
+        } catch (err) {
+          console.warn('⚠️ Failed with timeslice, trying without...')
+          mediaRecorder.start()
+          console.log('🔴 Recording started (no timeslice fallback)')
+        }
+      }
+      
+      console.log('📊 MediaRecorder state:', mediaRecorder.state)
+      console.log('📊 MediaRecorder videoBitsPerSecond:', mediaRecorder.videoBitsPerSecond)
+      console.log('📊 MediaRecorder audioBitsPerSecond:', mediaRecorder.audioBitsPerSecond)
+      
+      // Check state after 1 second
+      setTimeout(() => {
+        console.log('⏱️ 1 second check - MediaRecorder state:', mediaRecorderRef.current?.state)
+        console.log('⏱️ 1 second check - Chunks collected:', chunksRef.current.length)
+      }, 1000)
       
       setIsRecording(true)
       setRecordingTime(0)
@@ -177,6 +221,15 @@ export const ViMaxPage = () => {
   const stopRecording = () => {
     console.log('🛑 Stop button clicked')
     if (mediaRecorderRef.current && isRecording) {
+      console.log('📊 Current state before stop:', mediaRecorderRef.current.state)
+      console.log('📊 Chunks before stop:', chunksRef.current.length)
+      
+      // Request any remaining data before stopping
+      if (mediaRecorderRef.current.state === 'recording') {
+        console.log('📤 Requesting final data...')
+        mediaRecorderRef.current.requestData()
+      }
+      
       mediaRecorderRef.current.stop()
       setIsRecording(false)
       
