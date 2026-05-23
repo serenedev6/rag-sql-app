@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { videoAPI } from '../services/api'
 import { Button } from '../components/ui/Button'
+import RecordRTC from 'recordrtc'
 
 interface Video {
   id: number
@@ -21,8 +22,7 @@ export const ViMaxPage = () => {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [error, setError] = useState<string>('')
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
+  const recorderRef = useRef<RecordRTC | null>(null)
   const liveVideoRef = useRef<HTMLVideoElement>(null)
   const playbackVideoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -81,128 +81,41 @@ export const ViMaxPage = () => {
       
       console.log('📱 Device detection:', { isIOS, isSafari })
 
-      // For iOS Safari, use very specific settings
-      let selectedMimeType = ''
-      let recorderOptions: MediaRecorderOptions = {}
-      
+      // RecordRTC configuration for iOS
+      let recorderConfig: any = {
+        type: 'video',
+        mimeType: 'video/mp4',
+        disableLogs: false,
+        videoBitsPerSecond: 2500000,
+        frameRate: 30
+      }
+
       if (isIOS || isSafari) {
-        // iOS Safari ONLY supports video/mp4
-        selectedMimeType = 'video/mp4'
-        recorderOptions = {
+        // iOS-specific settings
+        recorderConfig = {
+          type: 'video',
           mimeType: 'video/mp4',
-          videoBitsPerSecond: 2500000, // 2.5 Mbps
-          audioBitsPerSecond: 128000   // 128 kbps
+          disableLogs: false,
+          numberOfAudioChannels: 1,
+          bufferSize: 16384,
+          sampleRate: 44100,
+          videoBitsPerSecond: 2500000,
+          frameRate: 30
         }
-        console.log('✅ Using iOS-optimized settings')
+        selectedMimeTypeRef.current = 'video/mp4'
+        console.log('✅ Using iOS-optimized RecordRTC settings')
       } else {
-        // Check supported MIME types for other browsers
-        const mimeTypes = [
-          'video/webm;codecs=vp9',
-          'video/webm;codecs=vp8',
-          'video/webm',
-          'video/mp4'
-        ]
-        
-        for (const mimeType of mimeTypes) {
-          if (MediaRecorder.isTypeSupported(mimeType)) {
-            selectedMimeType = mimeType
-            recorderOptions = { mimeType: selectedMimeType }
-            console.log('✅ Using MIME type:', mimeType)
-            break
-          }
-        }
+        selectedMimeTypeRef.current = 'video/webm'
+        recorderConfig.mimeType = 'video/webm'
+        console.log('✅ Using WebM RecordRTC settings')
       }
 
-      if (!selectedMimeType) {
-        throw new Error('No supported video format found on this device')
-      }
-
-      // Save MIME type for upload
-      selectedMimeTypeRef.current = selectedMimeType
-
-      const mediaRecorder = new MediaRecorder(mediaStream, recorderOptions)
-
-      mediaRecorderRef.current = mediaRecorder
-      chunksRef.current = []
-
-      mediaRecorder.ondataavailable = (e) => {
-        console.log('📦 Data chunk received:', e.data.size, 'bytes', 'Type:', e.data.type)
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data)
-          console.log('✅ Chunk added. Total chunks now:', chunksRef.current.length)
-        } else {
-          console.warn('⚠️ Empty chunk received!')
-        }
-      }
-
-      mediaRecorder.onstop = () => {
-        console.log('⏹️ Recording stopped')
-        
-        // Small delay to ensure last chunks are collected on mobile
-        setTimeout(() => {
-          console.log('📦 Total chunks:', chunksRef.current.length)
-          
-          const blob = new Blob(chunksRef.current, { type: selectedMimeTypeRef.current })
-          console.log('💾 Blob created:', blob.size, 'bytes', 'type:', selectedMimeTypeRef.current)
-          
-          if (blob.size > 0) {
-            setRecordedBlob(blob)
-            
-            // Show playback
-            if (playbackVideoRef.current) {
-              const url = URL.createObjectURL(blob)
-              console.log('🎬 Playback URL created:', url)
-              playbackVideoRef.current.src = url
-              playbackVideoRef.current.load()
-            }
-          } else {
-            console.error('❌ Blob is empty')
-            setError('Recording failed - no data captured')
-          }
-          
-          // Stop all tracks
-          mediaStream.getTracks().forEach(track => {
-            track.stop()
-            console.log('🛑 Track stopped:', track.kind)
-          })
-          setStream(null)
-          
-          // Clear live preview
-          if (liveVideoRef.current) {
-            liveVideoRef.current.srcObject = null
-          }
-        }, 300) // 300ms buffer for mobile
-      }
-
-      mediaRecorder.onerror = (e) => {
-        console.error('❌ MediaRecorder error:', e)
-        setError('Recording error occurred')
-      }
-
-      // Start recording - iOS Safari CANNOT use timeslice!
-      if (isIOS || isSafari) {
-        mediaRecorder.start() // NO timeslice for iOS
-        console.log('🔴 Recording started (iOS mode - no timeslice)')
-      } else {
-        try {
-          mediaRecorder.start(1000) // 1 second chunks for other browsers
-          console.log('🔴 Recording started (1000ms chunks)')
-        } catch (err) {
-          console.warn('⚠️ Failed with timeslice, trying without...')
-          mediaRecorder.start()
-          console.log('🔴 Recording started (no timeslice fallback)')
-        }
-      }
+      // Create RecordRTC instance
+      const recorder = new RecordRTC(mediaStream, recorderConfig)
+      recorderRef.current = recorder
       
-      console.log('📊 MediaRecorder state:', mediaRecorder.state)
-      console.log('📊 MediaRecorder videoBitsPerSecond:', mediaRecorder.videoBitsPerSecond)
-      console.log('📊 MediaRecorder audioBitsPerSecond:', mediaRecorder.audioBitsPerSecond)
-      
-      // Check state after 1 second
-      setTimeout(() => {
-        console.log('⏱️ 1 second check - MediaRecorder state:', mediaRecorderRef.current?.state)
-        console.log('⏱️ 1 second check - Chunks collected:', chunksRef.current.length)
-      }, 1000)
+      recorder.startRecording()
+      console.log('🔴 RecordRTC recording started')
       
       setIsRecording(true)
       setRecordingTime(0)
@@ -220,17 +133,45 @@ export const ViMaxPage = () => {
 
   const stopRecording = () => {
     console.log('🛑 Stop button clicked')
-    if (mediaRecorderRef.current && isRecording) {
-      console.log('📊 Current state before stop:', mediaRecorderRef.current.state)
-      console.log('📊 Chunks before stop:', chunksRef.current.length)
+    if (recorderRef.current && isRecording) {
+      console.log('📊 Stopping RecordRTC recorder...')
       
-      // Request any remaining data before stopping
-      if (mediaRecorderRef.current.state === 'recording') {
-        console.log('📤 Requesting final data...')
-        mediaRecorderRef.current.requestData()
-      }
+      recorderRef.current.stopRecording(() => {
+        console.log('⏹️ Recording stopped, getting blob...')
+        
+        const blob = recorderRef.current!.getBlob()
+        console.log('💾 Blob created:', blob.size, 'bytes', 'type:', blob.type)
+        
+        if (blob.size > 0) {
+          setRecordedBlob(blob)
+          
+          // Show playback
+          if (playbackVideoRef.current) {
+            const url = URL.createObjectURL(blob)
+            console.log('🎬 Playback URL created:', url)
+            playbackVideoRef.current.src = url
+            playbackVideoRef.current.load()
+          }
+        } else {
+          console.error('❌ Blob is empty')
+          setError('Recording failed - no data captured')
+        }
+        
+        // Stop all tracks
+        if (stream) {
+          stream.getTracks().forEach(track => {
+            track.stop()
+            console.log('🛑 Track stopped:', track.kind)
+          })
+          setStream(null)
+        }
+        
+        // Clear live preview
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject = null
+        }
+      })
       
-      mediaRecorderRef.current.stop()
       setIsRecording(false)
       
       if (timerRef.current) {
