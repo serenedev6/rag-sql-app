@@ -12,100 +12,103 @@ import { useAuthStore } from './store/authStore'
 import { OTPVerifyPage } from './pages/OTPVerifyPage'
 import { FileUploadPage } from './pages/FileUploadPage'
 import { ViMaxPage } from './pages/ViMaxPage'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
-        />
-        <Route
-          path="/register"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
-        />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          />
+          <Route
+            path="/register"
+            element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
+          />
 
-        {/* Protected routes with Dashboard layout */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <DashboardPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <ChatPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <HistoryPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <ProfilePage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/file-upload"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <FileUploadPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path='/vimax'
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <ViMaxPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout>
-                <SettingsPage />
-              </DashboardLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/verify-otp"
-          element={<OTPVerifyPage />}
-        />
-      </Routes>
-    </BrowserRouter>
+          {/* Protected routes with Dashboard layout */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <DashboardPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ChatPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <HistoryPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/file-upload"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <FileUploadPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/vimax'
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ViMaxPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SettingsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/verify-otp"
+            element={<OTPVerifyPage />}
+          />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
 

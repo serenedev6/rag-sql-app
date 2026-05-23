@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { authAPI } from "../../services/api";
 import { useState } from 'react'  // ← Add this
+import { ThemeToggle } from '../ui/ThemeToggle'
 
 const navItems = [
   { path: '/', icon: '🏠', label: 'Dashboard' },
@@ -91,6 +92,10 @@ export const Sidebar = () => {
 
           {/* User info + Logout */}
           <div className="p-4 border-t border-gray-700">
+            {/* Theme Toggle */}
+            <div className="mb-3 flex justify-center">
+              <ThemeToggle />
+            </div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-sm font-bold">

@@ -6,7 +6,7 @@ interface DashboardLayoutProps {
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       <Sidebar />
       
       {/* Main Content - Full height, proper mobile handling */}
