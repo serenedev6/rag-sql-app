@@ -18,16 +18,27 @@ export const ViMaxPage = () => {
   const [videos, setVideos] = useState<Video[]>([])
   const [title, setTitle] = useState('')
   const [recordingTime, setRecordingTime] = useState(0)
+  const [stream, setStream] = useState<MediaStream | null>(null)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const videoPreviewRef = useRef<HTMLVideoElement>(null)
+  const liveVideoRef = useRef<HTMLVideoElement>(null)  // ← Live preview
+  const playbackVideoRef = useRef<HTMLVideoElement>(null)  // ← Playback
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Load videos on mount
   useEffect(() => {
     loadVideos()
   }, [])
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop())
+      }
+    }
+  }, [stream])
 
   const loadVideos = async () => {
     try {
@@ -40,13 +51,24 @@ export const ViMaxPage = () => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: true
       })
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8,opus'
+      setStream(mediaStream)
+
+      // Show live preview
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject = mediaStream
+        liveVideoRef.current.play()
+      }
+
+      const mediaRecorder = new MediaRecorder(mediaStream, {
+        mimeType: 'video/webm;codecs=vp9,opus'
       })
 
       mediaRecorderRef.current = mediaRecorder
@@ -63,11 +85,17 @@ export const ViMaxPage = () => {
         setRecordedBlob(blob)
         
         // Stop all tracks
-        stream.getTracks().forEach(track => track.stop())
+        mediaStream.getTracks().forEach(track => track.stop())
+        setStream(null)
         
-        // Preview video
-        if (videoPreviewRef.current) {
-          videoPreviewRef.current.src = URL.createObjectURL(blob)
+        // Clear live preview
+        if (liveVideoRef.current) {
+          liveVideoRef.current.srcObject = null
+        }
+        
+        // Show playback
+        if (playbackVideoRef.current) {
+          playbackVideoRef.current.src = URL.createObjectURL(blob)
         }
       }
 
@@ -189,6 +217,22 @@ export const ViMaxPage = () => {
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6">
         <h2 className="text-white font-bold text-lg mb-4">Record New Video</h2>
 
+        {/* Live Preview During Recording */}
+        {isRecording && (
+          <div className="mb-4">
+            <video
+              ref={liveVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full max-w-2xl mx-auto rounded-lg bg-black"
+            />
+            <p className="text-center text-white mt-2 font-semibold">
+              🔴 Recording: {formatTime(recordingTime)}
+            </p>
+          </div>
+        )}
+
         {/* Recording Controls */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           {!isRecording && !recordedBlob && (
@@ -199,13 +243,16 @@ export const ViMaxPage = () => {
 
           {isRecording && (
             <Button onClick={stopRecording} className="flex-1 bg-red-600 hover:bg-red-700">
-              ⏹️ Stop Recording ({formatTime(recordingTime)})
+              ⏹️ Stop Recording
             </Button>
           )}
 
           {recordedBlob && (
             <>
-              <Button onClick={() => setRecordedBlob(null)} className="flex-1 bg-gray-700">
+              <Button onClick={() => {
+                setRecordedBlob(null)
+                setTitle('')
+              }} className="flex-1 bg-gray-700">
                 🔄 Record Again
               </Button>
               <Button 
@@ -214,21 +261,25 @@ export const ViMaxPage = () => {
               >
                 💾 Download
               </Button>
-              <Button onClick={uploadVideo} disabled={isUploading} className="flex-1">
-                {isUploading ? '⏳ Uploading...' : '☁️ Upload to Cloud'}
+              <Button onClick={uploadVideo} disabled={isUploading} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                {isUploading ? '⏳ Uploading...' : '☁️ Save to Cloud'}
               </Button>
             </>
           )}
         </div>
 
-        {/* Video Preview */}
+        {/* Recorded Video Playback */}
         {recordedBlob && (
           <div className="space-y-4">
-            <video
-              ref={videoPreviewRef}
-              controls
-              className="w-full max-w-2xl mx-auto rounded-lg bg-black"
-            />
+            <div>
+              <p className="text-white font-semibold mb-2">Preview:</p>
+              <video
+                ref={playbackVideoRef}
+                controls
+                playsInline
+                className="w-full max-w-2xl mx-auto rounded-lg bg-black"
+              />
+            </div>
 
             <input
               type="text"
@@ -258,6 +309,7 @@ export const ViMaxPage = () => {
                 <video
                   src={video.view_url}
                   controls
+                  playsInline
                   className="w-full rounded-lg bg-black mb-3"
                 />
 
@@ -269,8 +321,8 @@ export const ViMaxPage = () => {
                   <p>💾 {formatFileSize(video.file_size)}</p>
                 </div>
 
-               <div className="flex gap-2">
-                 <a 
+                <div className="flex gap-2">
+                  <a
                     href={video.view_url}
                     download={`${video.title || 'video'}.webm`}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm transition-colors text-center"
