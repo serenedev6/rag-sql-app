@@ -22,7 +22,7 @@ export const ViMaxPage = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const videoPreviewRef = useRef<HTMLVideoElement>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Load videos on mount
   useEffect(() => {
@@ -162,6 +162,17 @@ export const ViMaxPage = () => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
   }
 
+  const downloadVideo = (blob: Blob, filename?: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename || `video_${Date.now()}.webm`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -196,6 +207,12 @@ export const ViMaxPage = () => {
             <>
               <Button onClick={() => setRecordedBlob(null)} className="flex-1 bg-gray-700">
                 🔄 Record Again
+              </Button>
+              <Button 
+                onClick={() => downloadVideo(recordedBlob, title ? `${title}.webm` : undefined)} 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                💾 Download
               </Button>
               <Button onClick={uploadVideo} disabled={isUploading} className="flex-1">
                 {isUploading ? '⏳ Uploading...' : '☁️ Upload to Cloud'}
@@ -252,12 +269,21 @@ export const ViMaxPage = () => {
                   <p>💾 {formatFileSize(video.file_size)}</p>
                 </div>
 
-                <button
-                  onClick={() => deleteVideo(video.id)}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm transition-colors"
-                >
-                  🗑️ Delete
-                </button>
+               <div className="flex gap-2">
+                 <a 
+                    href={video.view_url}
+                    download={`${video.title || 'video'}.webm`}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm transition-colors text-center"
+                  >
+                    💾 Download
+                  </a>
+                  <button
+                    onClick={() => deleteVideo(video.id)}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm transition-colors"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
