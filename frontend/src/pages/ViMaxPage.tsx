@@ -26,6 +26,7 @@ export const ViMaxPage = () => {
   const liveVideoRef = useRef<HTMLVideoElement>(null)
   const playbackVideoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const selectedMimeTypeRef = useRef<string>('')
 
   useEffect(() => {
     loadVideos()
@@ -74,12 +75,12 @@ export const ViMaxPage = () => {
         console.log('▶️ Live preview started')
       }
 
-      // Check supported MIME types
+      // Check supported MIME types (MP4 first for iOS)
       const mimeTypes = [
+        'video/mp4',
         'video/webm;codecs=vp9',
         'video/webm;codecs=vp8',
-        'video/webm',
-        'video/mp4'
+        'video/webm'
       ]
       
       let selectedMimeType = ''
@@ -94,6 +95,9 @@ export const ViMaxPage = () => {
       if (!selectedMimeType) {
         throw new Error('No supported video format found')
       }
+
+      // Save MIME type for upload
+      selectedMimeTypeRef.current = selectedMimeType
 
       const mediaRecorder = new MediaRecorder(mediaStream, {
         mimeType: selectedMimeType
@@ -111,35 +115,41 @@ export const ViMaxPage = () => {
 
       mediaRecorder.onstop = () => {
         console.log('⏹️ Recording stopped')
-        console.log('📦 Total chunks:', chunksRef.current.length)
         
-        const blob = new Blob(chunksRef.current, { type: selectedMimeType })
-        console.log('💾 Blob created:', blob.size, 'bytes')
-        
-        setRecordedBlob(blob)
-        
-        // Stop all tracks
-        mediaStream.getTracks().forEach(track => {
-          track.stop()
-          console.log('🛑 Track stopped:', track.kind)
-        })
-        setStream(null)
-        
-        // Clear live preview
-        if (liveVideoRef.current) {
-          liveVideoRef.current.srcObject = null
-        }
-        
-        // Show playback
-        if (playbackVideoRef.current && blob.size > 0) {
-          const url = URL.createObjectURL(blob)
-          console.log('🎬 Playback URL created:', url)
-          playbackVideoRef.current.src = url
-          playbackVideoRef.current.load()
-        } else {
-          console.error('❌ Blob is empty or playback ref not available')
-          setError('Recording failed - no data captured')
-        }
+        // Small delay to ensure last chunks are collected on mobile
+        setTimeout(() => {
+          console.log('📦 Total chunks:', chunksRef.current.length)
+          
+          const blob = new Blob(chunksRef.current, { type: selectedMimeTypeRef.current })
+          console.log('💾 Blob created:', blob.size, 'bytes', 'type:', selectedMimeTypeRef.current)
+          
+          if (blob.size > 0) {
+            setRecordedBlob(blob)
+            
+            // Show playback
+            if (playbackVideoRef.current) {
+              const url = URL.createObjectURL(blob)
+              console.log('🎬 Playback URL created:', url)
+              playbackVideoRef.current.src = url
+              playbackVideoRef.current.load()
+            }
+          } else {
+            console.error('❌ Blob is empty')
+            setError('Recording failed - no data captured')
+          }
+          
+          // Stop all tracks
+          mediaStream.getTracks().forEach(track => {
+            track.stop()
+            console.log('🛑 Track stopped:', track.kind)
+          })
+          setStream(null)
+          
+          // Clear live preview
+          if (liveVideoRef.current) {
+            liveVideoRef.current.srcObject = null
+          }
+        }, 300) // 300ms buffer for mobile
       }
 
       mediaRecorder.onerror = (e) => {
@@ -148,7 +158,7 @@ export const ViMaxPage = () => {
       }
 
       mediaRecorder.start(100) // Record in 100ms chunks
-      console.log('🔴 Recording started')
+      console.log('🔴 Recording started with MIME type:', selectedMimeType)
       
       setIsRecording(true)
       setRecordingTime(0)
@@ -182,9 +192,14 @@ export const ViMaxPage = () => {
     setIsUploading(true)
 
     try {
+      const mimeType = selectedMimeTypeRef.current || 'video/webm'
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm'
       const timestamp = Date.now()
-      const filename = `recording_${timestamp}.webm`
-      const uploadData = await videoAPI.getUploadUrl(filename, 'video/webm')
+      const filename = `recording_${timestamp}.${ext}`
+      
+      console.log('☁️ Uploading:', filename, 'MIME:', mimeType, 'Size:', recordedBlob.size)
+      
+      const uploadData = await videoAPI.getUploadUrl(filename, mimeType)
 
       const success = await videoAPI.uploadToS3(uploadData.upload_url, recordedBlob)
 
@@ -238,10 +253,13 @@ export const ViMaxPage = () => {
   }
 
   const downloadVideo = (blob: Blob, filename?: string) => {
+    const mimeType = selectedMimeTypeRef.current || 'video/webm'
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm'
+    
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = filename || `video_${Date.now()}.webm`
+    a.download = filename || `video_${Date.now()}.${ext}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -311,7 +329,7 @@ export const ViMaxPage = () => {
                 🔄 Record Again
               </Button>
               <Button 
-                onClick={() => downloadVideo(recordedBlob, title ? `${title}.webm` : undefined)} 
+                onClick={() => downloadVideo(recordedBlob, title || undefined)} 
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 💾 Download ({formatFileSize(recordedBlob.size)})
