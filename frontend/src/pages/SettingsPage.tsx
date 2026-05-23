@@ -94,10 +94,10 @@ export const SettingsPage = () => {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-8 max-w-2xl bg-gray-50 dark:bg-gray-900 min-h-full">
       <div className="mb-8">
-        <h1 className="text-white text-3xl font-bold">Settings</h1>
-        <p className="text-gray-400 mt-2">Manage your security settings</p>
+        <h1 className="text-gray-900 dark:text-white text-3xl font-bold">Settings</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your security settings</p>
       </div>
 
       {/* Success/Error messages */}
@@ -113,13 +113,13 @@ export const SettingsPage = () => {
       )}
 
       {/* TOTP Section */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <span className="text-3xl">📱</span>
             <div>
-              <h2 className="text-white font-semibold">Google Authenticator</h2>
-              <p className="text-gray-400 text-sm">
+              <h2 className="text-gray-900 dark:text-white font-semibold">Google Authenticator</h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Two-factor authentication using TOTP
               </p>
             </div>
@@ -127,7 +127,7 @@ export const SettingsPage = () => {
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
             totpEnabled
               ? 'bg-green-500/20 text-green-400'
-              : 'bg-gray-700 text-gray-400'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
           }`}>
             {totpEnabled ? '✅ Enabled' : 'Disabled'}
           </span>
@@ -143,7 +143,7 @@ export const SettingsPage = () => {
         {/* QR Code Setup */}
         {showSetup && (
           <div className="mt-4">
-            <p className="text-gray-300 text-sm mb-4">
+            <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
               Scan this QR code with Google Authenticator:
             </p>
 
@@ -155,14 +155,14 @@ export const SettingsPage = () => {
             )}
 
             {/* Manual entry */}
-            <div className="bg-gray-700 rounded-lg p-3 mb-4">
-              <p className="text-gray-400 text-xs mb-1">Or enter manually:</p>
-              <p className="text-white font-mono text-sm break-all">{secretKey}</p>
+            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-4">
+              <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Or enter manually:</p>
+              <p className="text-gray-900 dark:text-white font-mono text-sm break-all">{secretKey}</p>
             </div>
 
             {/* Verify token */}
             <div>
-              <label className="text-gray-300 text-sm font-medium mb-2 block">
+              <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
                 Enter code from app to verify:
               </label>
               <Input
@@ -178,7 +178,7 @@ export const SettingsPage = () => {
               </Button>
               <button
                 onClick={() => { setShowSetup(false); setToken('') }}
-                className="text-gray-400 hover:text-white text-sm transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
               >
                 Cancel
               </button>
@@ -198,7 +198,7 @@ export const SettingsPage = () => {
 
         {showDisable && (
           <div className="mt-4">
-            <p className="text-gray-300 text-sm mb-3">
+            <p className="text-gray-700 dark:text-gray-300 text-sm mb-3">
               Enter code from Google Authenticator to disable:
             </p>
             <Input
@@ -216,7 +216,7 @@ export const SettingsPage = () => {
               </Button>
               <button
                 onClick={() => { setShowDisable(false); setDisableToken('') }}
-                className="text-gray-400 hover:text-white text-sm transition-colors"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
               >
                 Cancel
               </button>
@@ -226,20 +226,20 @@ export const SettingsPage = () => {
       </div>
 
       {/* App Info */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 mt-4">
-        <h2 className="text-white font-semibold mb-4">App Info</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 mt-4">
+        <h2 className="text-gray-900 dark:text-white font-semibold mb-4">App Info</h2>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-400">Version</span>
-            <span className="text-white">1.0.0</span>
+            <span className="text-gray-600 dark:text-gray-400">Version</span>
+            <span className="text-gray-900 dark:text-white">1.0.0</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">Backend</span>
-            <span className="text-white">Django 6.0.4</span>
+            <span className="text-gray-600 dark:text-gray-400">Backend</span>
+            <span className="text-gray-900 dark:text-white">Django 6.0.4</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">AI Model</span>
-            <span className="text-white">Groq LLaMA</span>
+            <span className="text-gray-600 dark:text-gray-400">AI Model</span>
+            <span className="text-gray-900 dark:text-white">Groq LLaMA</span>
           </div>
         </div>
       </div>

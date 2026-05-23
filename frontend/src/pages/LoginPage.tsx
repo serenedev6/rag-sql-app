@@ -29,7 +29,7 @@ export const LoginPage = () => {
           state: {
             user_id: response.user_id,
             message: response.message,
-            mfa_type: response.mfa_type  // ← add this
+            mfa_type: response.mfa_type
           }
         })
         return
@@ -58,19 +58,19 @@ export const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <span className="text-6xl">🔮</span>
-          <h1 className="text-white text-3xl font-bold mt-4">
+          <h1 className="text-gray-900 dark:text-white text-3xl font-bold mt-4">
             RAG SQL Assistant
           </h1>
-          <p className="text-gray-400 mt-2">Sign in to your account</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Sign in to your account</p>
         </div>
 
         {/* Form */}
-        <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
           {error && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
               {error}
@@ -79,7 +79,7 @@ export const LoginPage = () => {
 
           <div className="space-y-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium mb-2 block">
+              <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
                 Username
               </label>
               <Input
@@ -92,7 +92,7 @@ export const LoginPage = () => {
             </div>
 
             <div>
-              <label className="text-gray-300 text-sm font-medium mb-2 block">
+              <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
                 Password
               </label>
               <Input
@@ -102,7 +102,7 @@ export const LoginPage = () => {
                 onKeyPress={handleKeyPress}
                 placeholder="Enter your password"
                 disabled={isLoading}
-                showPasswordToggle={true}  // ← Add this
+                showPasswordToggle={true}
               />
             </div>
           </div>
@@ -115,11 +115,11 @@ export const LoginPage = () => {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
 
-          <p className="text-center text-gray-400 mt-6 text-sm">
+          <p className="text-center text-gray-600 dark:text-gray-400 mt-6 text-sm">
             Don't have an account?{' '}
             <Link
               to="/register"
-              className="text-blue-400 hover:text-blue-300 font-medium"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
             >
               Sign up
             </Link>

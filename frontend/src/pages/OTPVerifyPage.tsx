@@ -47,14 +47,14 @@ export const OTPVerifyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <span className="text-6xl">{isTOTP ? '📱' : '🔐'}</span>
-          <h1 className="text-white text-3xl font-bold mt-4">
+          <h1 className="text-gray-900 dark:text-white text-3xl font-bold mt-4">
             {isTOTP ? 'Authenticator Code' : 'Verify Your Identity'}
           </h1>
-          <p className="text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             {message || (isTOTP
               ? 'Enter the 6-digit code from your authenticator app'
               : 'Enter the OTP sent to your email'
@@ -62,7 +62,7 @@ export const OTPVerifyPage = () => {
           </p>
         </div>
 
-        <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
           {error && (
             <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 text-sm">
               {error}
@@ -70,7 +70,7 @@ export const OTPVerifyPage = () => {
           )}
 
           <div>
-            <label className="text-gray-300 text-sm font-medium mb-2 block">
+            <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
               {isTOTP ? 'Authenticator Code' : '6-digit OTP'}
             </label>
             <Input
@@ -80,10 +80,10 @@ export const OTPVerifyPage = () => {
               disabled={isLoading}
             />
             {!isTOTP && (
-              <p className="text-gray-500 text-xs mt-2">OTP expires in 10 minutes</p>
+              <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">OTP expires in 10 minutes</p>
             )}
             {isTOTP && (
-              <p className="text-gray-500 text-xs mt-2">Code refreshes every 30 seconds</p>
+              <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">Code refreshes every 30 seconds</p>
             )}
           </div>
 
@@ -97,7 +97,7 @@ export const OTPVerifyPage = () => {
 
           <button
             onClick={() => navigate('/login')}
-            className="w-full mt-4 text-gray-400 hover:text-white text-sm transition-colors"
+            className="w-full mt-4 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
           >
             ← Back to Login
           </button>

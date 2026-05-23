@@ -54,17 +54,17 @@ export const ProfilePage = () => {
 
   if (isFetching) {
     return (
-      <div className="p-8 flex items-center justify-center">
-        <p className="text-gray-400">Loading profile...</p>
+      <div className="p-8 flex items-center justify-center bg-gray-50 dark:bg-gray-900 min-h-full">
+        <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
       </div>
     )
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-8 max-w-2xl bg-gray-50 dark:bg-gray-900 min-h-full">
       <div className="mb-8">
-        <h1 className="text-white text-3xl font-bold">Profile</h1>
-        <p className="text-gray-400 mt-2">Manage your account settings</p>
+        <h1 className="text-gray-900 dark:text-white text-3xl font-bold">Profile</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your account settings</p>
       </div>
 
       {/* Avatar */}
@@ -75,15 +75,15 @@ export const ProfilePage = () => {
           </span>
         </div>
         <div>
-          <h2 className="text-white text-xl font-bold">
+          <h2 className="text-gray-900 dark:text-white text-xl font-bold">
             {firstName && lastName ? `${firstName} ${lastName}` : user?.username}
           </h2>
-          <p className="text-gray-400">{email}</p>
+          <p className="text-gray-600 dark:text-gray-400">{email}</p>
         </div>
       </div>
 
       {/* Form */}
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6">
         {success && (
           <div className="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-lg mb-6 text-sm">
             {success}
@@ -97,7 +97,7 @@ export const ProfilePage = () => {
 
         <div className="space-y-4">
           <div>
-            <label className="text-gray-300 text-sm font-medium mb-2 block">
+            <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
               Username
             </label>
             <Input
@@ -106,11 +106,11 @@ export const ProfilePage = () => {
               disabled={true}
               className="opacity-50"
             />
-            <p className="text-gray-500 text-xs mt-1">Username cannot be changed</p>
+            <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">Username cannot be changed</p>
           </div>
 
           <div>
-            <label className="text-gray-300 text-sm font-medium mb-2 block">
+            <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
               Email
             </label>
             <Input
@@ -122,7 +122,7 @@ export const ProfilePage = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-gray-300 text-sm font-medium mb-2 block">
+              <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
                 First Name
               </label>
               <Input
@@ -132,7 +132,7 @@ export const ProfilePage = () => {
               />
             </div>
             <div>
-              <label className="text-gray-300 text-sm font-medium mb-2 block">
+              <label className="text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 block">
                 Last Name
               </label>
               <Input

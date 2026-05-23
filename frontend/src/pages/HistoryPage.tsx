@@ -36,12 +36,12 @@ export const HistoryPage = () => {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 bg-gray-50 dark:bg-gray-900 min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-white text-3xl font-bold">Chat History</h1>
-          <p className="text-gray-400 mt-2">All your past conversations</p>
+          <h1 className="text-gray-900 dark:text-white text-3xl font-bold">Chat History</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">All your past conversations</p>
         </div>
         {history.length > 0 && (
           <button
@@ -57,19 +57,19 @@ export const HistoryPage = () => {
       {/* History list */}
       {isLoading ? (
         <div className="text-center py-20">
-          <p className="text-gray-400">Loading history...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading history...</p>
         </div>
       ) : history.length === 0 ? (
         <div className="text-center py-20">
           <span className="text-6xl mb-4 block">📜</span>
-          <p className="text-gray-400 text-lg">No chat history yet!</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">No chat history yet!</p>
         </div>
       ) : (
         <div className="space-y-4">
           {history.map((item) => (
             <div
               key={item.id}
-              className="bg-gray-800 border border-gray-700 rounded-2xl p-6"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6"
             >
               <div className="flex items-center justify-between mb-3">
                 <span className={`text-xs px-2 py-1 rounded-full ${
@@ -79,12 +79,12 @@ export const HistoryPage = () => {
                 }`}>
                   {item.mode === 'sql' ? '🔢 SQL' : '🔍 RAG'}
                 </span>
-                <span className="text-gray-500 text-xs">
+                <span className="text-gray-500 dark:text-gray-500 text-xs">
                   {new Date(item.created_at).toLocaleString()}
                 </span>
               </div>
-              <p className="text-white font-medium mb-2">{item.question}</p>
-              <p className="text-gray-400 text-sm">{item.answer}</p>
+              <p className="text-gray-900 dark:text-white font-medium mb-2">{item.question}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{item.answer}</p>
             </div>
           ))}
         </div>

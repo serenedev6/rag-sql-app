@@ -171,13 +171,13 @@ export const ChatPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-900">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 flex items-center gap-3">
         <span className="text-2xl">🔮</span>
         <div>
-          <h1 className="text-white font-semibold text-base sm:text-lg">RAG SQL Assistant</h1>
-          <p className="text-gray-400 text-xs sm:text-sm">
+          <h1 className="text-gray-900 dark:text-white font-semibold text-base sm:text-lg">RAG SQL Assistant</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
             {useAgent ? 'Agent Mode: Multi-tool reasoning' : 'Quick Mode: Fast keyword-based'}
           </p>
         </div>
@@ -188,10 +188,10 @@ export const ChatPage = () => {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <span className="text-4xl sm:text-6xl mb-4">🔮</span>
-            <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">
+            <h2 className="text-gray-900 dark:text-white text-xl sm:text-2xl font-semibold mb-2">
               Welcome to RAG SQL Assistant
             </h2>
-            <p className="text-gray-400 text-sm sm:text-base max-w-md">
+            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base max-w-md">
               Ask me anything about your data. I can answer questions using
               both RAG and SQL modes.
             </p>
@@ -205,7 +205,7 @@ export const ChatPage = () => {
                 <button
                   key={suggestion}
                   onClick={() => setQuestion(suggestion)}
-                  className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors"
+                  className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-xs sm:text-sm transition-colors"
                 >
                   {suggestion}
                 </button>
@@ -219,7 +219,7 @@ export const ChatPage = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start mb-4">
-                <div className="bg-gray-800 border border-gray-700 text-gray-400 px-4 py-3 rounded-2xl rounded-bl-sm">
+                <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 px-4 py-3 rounded-2xl rounded-bl-sm">
                   {useAgent ? '🤖 Agent thinking...' : '⏳ Thinking...'}
                 </div>
               </div>
@@ -230,7 +230,7 @@ export const ChatPage = () => {
       </div>
 
       {/* Input area */}
-      <div className="bg-gray-800 border-t border-gray-700 px-4 sm:px-6 py-4">
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4">
         {/* Mode Toggle */}
         <div className="max-w-4xl mx-auto mb-3 flex items-center justify-center gap-2">
           <button
@@ -238,7 +238,7 @@ export const ChatPage = () => {
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
               !useAgent
                 ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'
             }`}
           >
             <span className="hidden sm:inline">⚡ Quick Mode</span>
@@ -249,7 +249,7 @@ export const ChatPage = () => {
             className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
               useAgent
                 ? 'bg-purple-600 text-white shadow-lg'
-                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'
             }`}
           >
             <span className="hidden sm:inline">🤖 Agent Mode</span>
@@ -265,7 +265,7 @@ export const ChatPage = () => {
             className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
               isListening
                 ? 'bg-red-600 text-white animate-pulse'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
             }`}
             title={isListening ? 'Stop listening' : 'Start voice input'}
           >
@@ -313,7 +313,7 @@ export const ChatPage = () => {
               className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-all flex-shrink-0 ${
                 isSpeaking
                   ? 'bg-green-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
               }`}
               title={isSpeaking ? 'Stop speaking' : 'Read last answer aloud'}
             >

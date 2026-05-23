@@ -261,13 +261,13 @@ export const ViMaxPage = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-full">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-white text-2xl sm:text-3xl font-bold flex items-center gap-3">
+        <h1 className="text-gray-900 dark:text-white text-2xl sm:text-3xl font-bold flex items-center gap-3">
           <span>🎥</span> ViMax - Video Recorder
         </h1>
-        <p className="text-gray-400 mt-2 text-sm sm:text-base">
+        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
           Record videos and store them securely on AWS S3
         </p>
       </div>
@@ -280,8 +280,8 @@ export const ViMaxPage = () => {
       )}
 
       {/* Recording Section */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6">
-        <h2 className="text-white font-bold text-lg mb-4">Record New Video</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+        <h2 className="text-gray-900 dark:text-white font-bold text-lg mb-4">Record New Video</h2>
 
         {/* Live Preview During Recording */}
         {isRecording && (
@@ -293,7 +293,7 @@ export const ViMaxPage = () => {
               playsInline
               className="w-full max-w-2xl mx-auto rounded-lg bg-black border-4 border-red-500"
             />
-            <p className="text-center text-white mt-2 font-semibold animate-pulse">
+            <p className="text-center text-gray-900 dark:text-white mt-2 font-semibold animate-pulse">
               🔴 LIVE - Recording: {formatTime(recordingTime)}
             </p>
           </div>
@@ -319,7 +319,7 @@ export const ViMaxPage = () => {
                 setRecordedBlob(null)
                 setTitle('')
                 setError('')
-              }} className="flex-1 bg-gray-700">
+              }} className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600">
                 🔄 Record Again
               </Button>
               <Button 
@@ -339,7 +339,7 @@ export const ViMaxPage = () => {
         {recordedBlob && (
           <div className="space-y-4">
             <div>
-              <p className="text-white font-semibold mb-2">Preview ({formatFileSize(recordedBlob.size)}):</p>
+              <p className="text-gray-900 dark:text-white font-semibold mb-2">Preview ({formatFileSize(recordedBlob.size)}):</p>
               <video
                 ref={playbackVideoRef}
                 controls
@@ -353,10 +353,10 @@ export const ViMaxPage = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter video title (optional)"
-              className="w-full bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-purple-500"
+              className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-2 rounded-lg focus:outline-none focus:border-purple-500"
             />
 
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               Duration: {formatTime(recordingTime)} | Size: {formatFileSize(recordedBlob.size)}
             </p>
           </div>
@@ -364,15 +364,15 @@ export const ViMaxPage = () => {
       </div>
 
       {/* Saved Videos */}
-      <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-        <h2 className="text-white font-bold text-lg mb-4">Your Videos ({videos.length})</h2>
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <h2 className="text-gray-900 dark:text-white font-bold text-lg mb-4">Your Videos ({videos.length})</h2>
 
         {videos.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">No videos yet. Start recording!</p>
+          <p className="text-gray-600 dark:text-gray-400 text-center py-8">No videos yet. Start recording!</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {videos.map((video) => (
-              <div key={video.id} className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+              <div key={video.id} className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 <video
                   src={video.view_url}
                   controls
@@ -380,9 +380,9 @@ export const ViMaxPage = () => {
                   className="w-full rounded-lg bg-black mb-3"
                 />
 
-                <h3 className="text-white font-semibold mb-2">{video.title || 'Untitled'}</h3>
+                <h3 className="text-gray-900 dark:text-white font-semibold mb-2">{video.title || 'Untitled'}</h3>
 
-                <div className="text-gray-400 text-xs space-y-1 mb-3">
+                <div className="text-gray-600 dark:text-gray-400 text-xs space-y-1 mb-3">
                   <p>📅 {new Date(video.created_at).toLocaleDateString()}</p>
                   {video.duration && <p>⏱️ {formatTime(video.duration)}</p>}
                   <p>💾 {formatFileSize(video.file_size)}</p>

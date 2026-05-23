@@ -66,13 +66,13 @@ export const FileUploadPage = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-full">
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-white text-2xl sm:text-3xl font-bold flex items-center gap-3">
+        <h1 className="text-gray-900 dark:text-white text-2xl sm:text-3xl font-bold flex items-center gap-3">
           <span>📁</span> File Upload & Analysis
         </h1>
-        <p className="text-gray-400 mt-2 text-sm sm:text-base">
+        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
           Upload files and ask questions - supports CSV, Excel, PDF, Images, Word, Text
         </p>
       </div>
@@ -82,7 +82,7 @@ export const FileUploadPage = () => {
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => document.getElementById('file-upload-input')?.click()}
-        className="border-2 border-dashed border-gray-600 hover:border-gray-500 rounded-xl p-12 text-center cursor-pointer transition-all bg-gray-800/50 mb-6"
+        className="border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-xl p-12 text-center cursor-pointer transition-all bg-gray-100 dark:bg-gray-800/50 mb-6"
       >
         <input
           id="file-upload-input"
@@ -93,18 +93,18 @@ export const FileUploadPage = () => {
         />
 
         {selectedFile ? (
-          <div className="text-green-400">
+          <div className="text-green-600 dark:text-green-400">
             <div className="text-5xl mb-3">✅</div>
             <p className="text-lg font-semibold">{selectedFile.name}</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {(selectedFile.size / 1024).toFixed(2)} KB
             </p>
           </div>
         ) : (
-          <div className="text-gray-400">
+          <div className="text-gray-500 dark:text-gray-400">
             <div className="text-6xl mb-4">📎</div>
             <p className="text-lg mb-2">Drop file here or click to browse</p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400 dark:text-gray-500">
               Supports: CSV, Excel, PDF, Images (JPG, PNG), Word, Text
             </p>
           </div>
@@ -113,15 +113,15 @@ export const FileUploadPage = () => {
 
       {/* Question Input & Analyze Button */}
       {selectedFile && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-6">
-          <label className="block text-white font-semibold mb-3">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-6">
+          <label className="block text-gray-900 dark:text-white font-semibold mb-3">
             Ask a question about this file:
           </label>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="E.g., What's in this image? Summarize this document. What's the average in column X?"
-            className="w-full bg-gray-900 border border-gray-700 text-white px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 resize-none"
+            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 rounded-lg focus:outline-none focus:border-purple-500 resize-none"
             rows={3}
             disabled={isUploading}
           />
@@ -136,7 +136,7 @@ export const FileUploadPage = () => {
             </Button>
             <button
               onClick={handleClear}
-              className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg transition-colors"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
               disabled={isUploading}
             >
               Clear
@@ -147,8 +147,8 @@ export const FileUploadPage = () => {
 
       {/* Result Display */}
       {result && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h2 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+          <h2 className="text-gray-900 dark:text-white font-bold text-lg mb-4 flex items-center gap-2">
             <span>💬</span> Analysis Result
           </h2>
 
@@ -157,7 +157,7 @@ export const FileUploadPage = () => {
               ❌ {result.error}
             </div>
           ) : (
-            <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 text-gray-300 whitespace-pre-wrap">
+            <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
               {result.answer}
             </div>
           )}
@@ -165,13 +165,13 @@ export const FileUploadPage = () => {
           <div className="mt-4 flex gap-3">
             <button
               onClick={() => navigate('/chat')}
-              className="text-blue-400 hover:text-blue-300 text-sm"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
             >
               → View in Chat History
             </button>
             <button
               onClick={handleClear}
-              className="text-gray-400 hover:text-gray-300 text-sm"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
             >
               Upload Another File
             </button>
@@ -180,11 +180,11 @@ export const FileUploadPage = () => {
       )}
 
       {/* Tips */}
-      <div className="mt-8 bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-        <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+      <div className="mt-8 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
+        <h3 className="text-gray-900 dark:text-white font-semibold mb-3 flex items-center gap-2">
           <span>💡</span> Tips
         </h3>
-        <ul className="text-gray-400 text-sm space-y-2">
+        <ul className="text-gray-600 dark:text-gray-400 text-sm space-y-2">
           <li>• <strong>Images:</strong> Ask "What's in this image?" or "Describe this"</li>
           <li>• <strong>CSV/Excel:</strong> Ask about averages, totals, or specific columns</li>
           <li>• <strong>PDFs/Word:</strong> Ask for summaries or specific information</li>
